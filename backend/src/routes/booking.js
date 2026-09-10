@@ -14,7 +14,7 @@ function parseBookingDates(checkIn, checkOut) {
     return { start, end };
 }
 
-async function getBookedRooms(listingId, start, end, bookingId) {
+async function getBookedRooms(listingId, start, end, bookingId, session) {
     const filter = {
         listingId,
         $or: [
@@ -25,13 +25,25 @@ async function getBookedRooms(listingId, start, end, bookingId) {
         checkOut: { $gt: start },
     };
     if (bookingId) filter._id = { $ne: bookingId };
-    const bookings = await Booking.find(filter).select("rooms");
+    const query = Booking.find(filter).select("rooms");
+    if (session) query.session(session);
+    const bookings = await query;
     return bookings.reduce((total, booking) => total + booking.rooms, 0);
 }
 
 function parseRooms(value) {
     const rooms = value === undefined ? 1 : Number(value);
     return Number.isInteger(rooms) && rooms > 0 ? rooms : null;
+}
+
+function parseDashboardDates(checkIn, checkOut) {
+    if (checkIn === undefined && checkOut === undefined) {
+        const start = new Date();
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+        return { start, end };
+    }
+    return parseBookingDates(checkIn, checkOut);
 }
 
 // Create a new booking
@@ -49,29 +61,40 @@ router.post("/", authMiddleware, async (req, res) => {
         if (!dates) {
             return res.status(400).json({ message: "Check-out must be after check-in, using valid dates." });
         }
-        const listing = await Listing.findById(listingId);
-        if (!listing) {
-            return res.status(404).json({ message: "Listing not found." });
-        }
-        const bookedRooms = await getBookedRooms(listingId, dates.start, dates.end);
-        if (bookedRooms + rooms > listing.totalRooms) {
-            return res.status(409).json({
-                message: `Only ${Math.max(listing.totalRooms - bookedRooms, 0)} room(s) are available for those dates.`,
+        let newBooking;
+        const session = await mongoose.startSession();
+        try {
+            await session.withTransaction(async () => {
+                const listing = await Listing.findById(listingId).session(session);
+                if (!listing) {
+                    const error = new Error("Listing not found.");
+                    error.statusCode = 404;
+                    throw error;
+                }
+                const bookedRooms = await getBookedRooms(listingId, dates.start, dates.end, undefined, session);
+                if (bookedRooms + rooms > listing.totalRooms) {
+                    const error = new Error(`Only ${Math.max(listing.totalRooms - bookedRooms, 0)} room(s) are available for those dates.`);
+                    error.statusCode = 409;
+                    throw error;
+                }
+                newBooking = new Booking({
+                    listingId,
+                    userId: req.user.userId,
+                    checkIn: dates.start,
+                    checkOut: dates.end,
+                    rooms,
+                    totalAmount: listing.price * rooms,
+                });
+                await newBooking.save({ session });
+                await Listing.updateOne({ _id: listingId }, { $inc: { capacityVersion: 1 } }, { session });
             });
+        } finally {
+            await session.endSession();
         }
-        const newBooking = new Booking({
-            listingId,
-            userId: req.user.userId,
-            checkIn: dates.start,
-            checkOut: dates.end,
-            rooms,
-            totalAmount: listing.price * rooms,
-        });
-        await newBooking.save();
         res.status(201).json({ message: "Booking created successfully", booking: newBooking });
     } catch (error) {
         console.error("Error creating booking:", error);
-        res.status(500).json({ message: "Error creating booking" });
+        res.status(error.statusCode || 500).json({ message: error.message || "Error creating booking" });
     }
 });
 
@@ -93,14 +116,16 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
         if (!req.user.isAdmin) {
             return res.status(403).json({ message: "Access denied. Admins only." });
         }
-        const dates = parseBookingDates(req.query.checkIn, req.query.checkOut);
+        const dates = parseDashboardDates(req.query.checkIn, req.query.checkOut);
         if (!dates) {
-            return res.status(400).json({ message: "Valid checkIn and checkOut dates are required." });
+            return res.status(400).json({ message: "Provide both valid checkIn and checkOut dates, or omit both to use today." });
         }
 
-        const [listings, activeBookings, paidBookings] = await Promise.all([
-            Listing.find().select("title location price totalRooms"),
+        const listings = await Listing.find({ hostId: req.user.userId }).select("title location price totalRooms");
+        const listingIds = listings.map((listing) => listing._id);
+        const [activeBookings, paidBookings] = await Promise.all([
             Booking.find({
+            listingId: { $in: listingIds },
                 $or: [
                     { status: "confirmed" },
                     { status: "pending_payment", paymentStatus: "unpaid" },
@@ -108,7 +133,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
                 checkIn: { $lt: dates.end },
                 checkOut: { $gt: dates.start },
             }).select("listingId rooms"),
-            Booking.find({ status: "confirmed", paymentStatus: "paid" }).select("totalAmount currency rooms"),
+            Booking.find({ listingId: { $in: listingIds }, status: "confirmed", paymentStatus: "paid" }).select("totalAmount currency rooms"),
         ]);
 
         const bookedByListing = new Map();
@@ -131,7 +156,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
 
         const revenueByCurrency = {};
         for (const booking of paidBookings) {
-            const currency = (booking.currency || "usd").toUpperCase();
+            const currency = (booking.currency || "ngn").toUpperCase();
             revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + booking.totalAmount;
         }
 
@@ -149,6 +174,43 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
     } catch (error) {
         console.error("Error fetching booking dashboard:", error);
         res.status(500).json({ message: "Error fetching booking dashboard" });
+    }
+});
+
+router.get("/admin-bookings", authMiddleware, async (req, res) => {
+    try {
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ message: "Access denied. Admins only." });
+        }
+
+        const listingFilter = { hostId: req.user.userId };
+        if (req.query.listingId) {
+            if (!mongoose.isValidObjectId(req.query.listingId)) {
+                return res.status(400).json({ message: "Invalid listing ID." });
+            }
+            listingFilter._id = req.query.listingId;
+        }
+
+        const listings = await Listing.find(listingFilter).select("title location price totalRooms");
+        const listingIds = listings.map((listing) => listing._id);
+        const bookingFilter = { listingId: { $in: listingIds } };
+
+        if (req.query.status) {
+            if (!["pending_payment", "confirmed", "cancelled"].includes(req.query.status)) {
+                return res.status(400).json({ message: "Invalid booking status." });
+            }
+            bookingFilter.status = req.query.status;
+        }
+
+        const bookings = await Booking.find(bookingFilter)
+            .populate("listingId", "title location price totalRooms")
+            .populate("userId", "name email")
+            .sort({ createdAt: -1 });
+
+        res.json({ bookings, count: bookings.length });
+    } catch (error) {
+        console.error("Error fetching admin bookings:", error);
+        res.status(500).json({ message: "Error fetching admin bookings" });
     }
 });
 
@@ -190,6 +252,9 @@ router.put("/:id", authMiddleware, async (req, res) => {
         if (booking.status === "cancelled") {
             return res.status(400).json({ message: "Cancelled bookings cannot be updated." });
         }
+        if (booking.paymentStatus === "paid" || booking.status === "confirmed") {
+            return res.status(400).json({ message: "Paid or confirmed bookings cannot be edited. Cancel and create a new booking instead." });
+        }
         if (!mongoose.isValidObjectId(listingId)) {
             return res.status(400).json({ message: "A valid listing ID is required." });
         }
@@ -200,25 +265,36 @@ router.put("/:id", authMiddleware, async (req, res) => {
         if (!dates) {
             return res.status(400).json({ message: "Check-out must be after check-in, using valid dates." });
         }
-        const listing = await Listing.findById(listingId);
-        if (!listing) {
-            return res.status(404).json({ message: "Listing not found." });
-        }
-        const bookedRooms = await getBookedRooms(listingId, dates.start, dates.end, booking._id);
-        if (bookedRooms + rooms > listing.totalRooms) {
-            return res.status(409).json({
-                message: `Only ${Math.max(listing.totalRooms - bookedRooms, 0)} room(s) are available for those dates.`,
+        let updatedBooking;
+        const session = await mongoose.startSession();
+        try {
+            await session.withTransaction(async () => {
+                const listing = await Listing.findById(listingId).session(session);
+                if (!listing) {
+                    const error = new Error("Listing not found.");
+                    error.statusCode = 404;
+                    throw error;
+                }
+                const bookedRooms = await getBookedRooms(listingId, dates.start, dates.end, booking._id, session);
+                if (bookedRooms + rooms > listing.totalRooms) {
+                    const error = new Error(`Only ${Math.max(listing.totalRooms - bookedRooms, 0)} room(s) are available for those dates.`);
+                    error.statusCode = 409;
+                    throw error;
+                }
+                updatedBooking = await Booking.findByIdAndUpdate(
+                    req.params.id,
+                    { listingId, checkIn: dates.start, checkOut: dates.end, rooms, totalAmount: listing.price * rooms },
+                    { new: true, runValidators: true, session }
+                );
+                await Listing.updateOne({ _id: listingId }, { $inc: { capacityVersion: 1 } }, { session });
             });
+        } finally {
+            await session.endSession();
         }
-        const updatedBooking = await Booking.findByIdAndUpdate(
-            req.params.id,
-            { listingId, checkIn: dates.start, checkOut: dates.end, rooms, totalAmount: listing.price * rooms },
-            { new: true, runValidators: true }
-        );
         res.json({ message: "Booking updated successfully", booking: updatedBooking });
     } catch (error) {
         console.error("Error updating booking:", error);
-        res.status(500).json({ message: "Error updating booking" });
+        res.status(error.statusCode || 500).json({ message: error.message || "Error updating booking" });
     }
 });
 
@@ -235,8 +311,11 @@ router.delete("/:id", authMiddleware, async (req, res) => {
         if(booking.userId.toString() !== req.user.userId) {
             return res.status(403).json({ message: "Access denied. You can only delete your own bookings." });
         }
-        if (booking.status === "cancelled") {
+        if(booking.status === "cancelled") {
             return res.status(400).json({ message: "Booking is already cancelled." });
+        }
+        if (booking.paymentStatus === "paid") {
+            return res.status(400).json({ message: "Paid bookings require a refund before cancellation." });
         }
         booking.status = "cancelled";
         await booking.save();

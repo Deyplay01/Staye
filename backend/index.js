@@ -10,6 +10,7 @@ const listingsRoutes = require("./src/routes/listings");
 const bookingRoutes = require("./src/routes/booking");
 const paymentRoutes = require("./src/routes/payments");
 const uploadRoutes = require("./src/routes/uploads");
+const Listing = require("./src/models/Listings");
 const cors = require("cors");
 const path = require("path");
 // const dns = require("dns");
@@ -47,7 +48,11 @@ if (!MONGODB_URI || !process.env.JWT_SECRET) {
     throw new Error("MONGODB_URI and JWT_SECRET must be configured.");
 }
 
-mongoose.connect(MONGODB_URI).then(() => {
+mongoose.connect(MONGODB_URI).then(async () => {
+    await Listing.updateMany(
+        { $or: [{ totalRooms: { $exists: false } }, { totalRooms: null }] },
+        { $set: { totalRooms: 1 } }
+    );
     app.listen(PORT, () => {
         console.log("Server running on port:", PORT);
     })

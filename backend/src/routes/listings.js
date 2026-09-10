@@ -99,7 +99,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
         }
         const { title, description, price, location, images, amenities, totalRooms } = req.body;
         const updatedListing = await Listing.findByIdAndUpdate(
-            req.params.id,
+            { _id: req.params.id, hostId: req.user.userId },
             { $set: { title, description, price, location, images, amenities, totalRooms } },
             { new: true, runValidators: true }
         );
@@ -122,7 +122,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
         if (!require("mongoose").isValidObjectId(req.params.id)) {
             return res.status(400).json({ message: "Invalid listing ID." });
         }
-        const deletedListing = await Listing.findByIdAndDelete(req.params.id);
+        const deletedListing = await Listing.findOneAndDelete({ _id: req.params.id, hostId: req.user.userId });
         if (!deletedListing) {
             return res.status(404).json({ message: "Listing not found" });
         }

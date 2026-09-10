@@ -101,6 +101,10 @@ router.post("/verify", authMiddleware, async (req, res) => {
         if (!response.data.status || !transaction || transaction.reference !== booking.paymentReference) {
             return res.status(400).json({ message: "Paystack transaction verification failed." });
         }
+        if (transaction.amount !== Math.round(booking.totalAmount * 100)
+            || transaction.currency?.toLowerCase() !== booking.currency?.toLowerCase()) {
+            return res.status(400).json({ message: "Payment amount or currency does not match the booking." });
+        }
 
         if (transaction.status === "success") {
             booking.paymentStatus = "paid";
@@ -123,22 +127,72 @@ router.post("/verify", authMiddleware, async (req, res) => {
     }
 });
 
+router.post("/refund", authMiddleware, async (req, res) => {
+    try {
+        if (!requirePaystack(res)) return;
+        const { bookingId } = req.body;
+        if (!mongoose.isValidObjectId(bookingId)) {
+            return res.status(400).json({ message: "A valid booking ID is required." });
+        }
+
+        const booking = await Booking.findOne({ _id: bookingId, userId: req.user.userId });
+        if (!booking) return res.status(404).json({ message: "Booking not found." });
+        if (booking.paymentStatus !== "paid" || !booking.paymentReference) {
+            return res.status(400).json({ message: "Only paid bookings with a payment reference can be refunded." });
+        }
+        if (booking.status === "cancelled" && booking.paymentStatus === "refunded") {
+            return res.status(400).json({ message: "Booking has already been refunded." });
+        }
+
+        const response = await paystack.post("/refund", { transaction: booking.paymentReference });
+        if (!response.data.status) {
+            return res.status(502).json({ message: response.data.message || "Paystack could not process the refund." });
+        }
+
+        booking.paymentStatus = "refunded";
+        booking.status = "cancelled";
+        await booking.save();
+        res.json({ message: "Payment refunded and booking cancelled.", booking });
+    } catch (error) {
+        console.error("Error refunding payment:", error.response?.data || error.message);
+        res.status(error.response?.status === 400 ? 409 : 502).json({
+            message: error.response?.data?.message || "Unable to refund payment. Please try again.",
+        });
+    }
+});
+
 async function handleWebhook(req, res) {
     if (!process.env.PAYSTACK_SECRET_KEY) return res.status(503).json({ message: "Paystack is not configured." });
 
+    if (!Buffer.isBuffer(req.body)) return res.status(400).json({ message: "Invalid webhook body." });
     const signature = crypto.createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
         .update(req.body)
         .digest("hex");
-    if (signature !== req.headers["x-paystack-signature"]) {
+    const receivedSignature = req.headers["x-paystack-signature"];
+    const expectedBuffer = Buffer.from(signature, "utf8");
+    const receivedBuffer = Buffer.from(receivedSignature || "", "utf8");
+    if (expectedBuffer.length !== receivedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)) {
         return res.status(401).json({ message: "Invalid Paystack webhook signature." });
     }
 
-    const event = JSON.parse(req.body.toString("utf8"));
+    let event;
+    try {
+        event = JSON.parse(req.body.toString("utf8"));
+    } catch {
+        return res.status(400).json({ message: "Invalid webhook JSON." });
+    }
     if (event.event === "charge.success" && event.data?.reference) {
-        await Booking.findOneAndUpdate(
-            { paymentReference: event.data.reference, status: "pending_payment" },
-            { paymentStatus: "paid", status: "confirmed" }
-        );
+        const booking = await Booking.findOne({ paymentReference: event.data.reference, status: "pending_payment" });
+        if (booking) {
+            const metadata = event.data.metadata || {};
+            const validPayment = event.data.amount === Math.round(booking.totalAmount * 100)
+                && event.data.currency?.toLowerCase() === booking.currency?.toLowerCase()
+                && (!metadata.bookingId || metadata.bookingId === booking._id.toString());
+            if (!validPayment) return res.status(400).json({ message: "Webhook payment does not match the booking." });
+            booking.paymentStatus = "paid";
+            booking.status = "confirmed";
+            await booking.save();
+        }
     }
 
     res.json({ received: true });

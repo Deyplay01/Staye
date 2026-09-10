@@ -24,6 +24,11 @@ const listingSchema = new mongoose.Schema({
             message: "Total rooms must be a whole number.",
         },
     },
+    capacityVersion: {
+        type: Number,
+        default: 0,
+        select: false,
+    },
     location: {
         type: String,
         required: true,
