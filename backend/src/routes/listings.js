@@ -78,8 +78,8 @@ router.post("/", authMiddleware, async (req, res) => {
         if (!req.user.isAdmin) {
             return res.status(403).json({ message: "Access denied. Admins only." });
         }
-        const { title, description, price, location, images, amenities } = req.body;
-        const newListing = new Listing({ title, description, price, location, images, amenities, hostId: req.user.userId });
+        const { title, description, price, location, images, amenities, totalRooms } = req.body;
+        const newListing = new Listing({ title, description, price, location, images, amenities, totalRooms, hostId: req.user.userId });
         await newListing.save();
         res.status(201).json({ message: "Listing created successfully", listing: newListing });
     } catch (error) {
@@ -97,10 +97,10 @@ router.put("/:id", authMiddleware, async (req, res) => {
         if (!require("mongoose").isValidObjectId(req.params.id)) {
             return res.status(400).json({ message: "Invalid listing ID." });
         }
-        const { title, description, price, location, images, amenities } = req.body;
+        const { title, description, price, location, images, amenities, totalRooms } = req.body;
         const updatedListing = await Listing.findByIdAndUpdate(
             req.params.id,
-            { $set: { title, description, price, location, images, amenities } },
+            { $set: { title, description, price, location, images, amenities, totalRooms } },
             { new: true, runValidators: true }
         );
         if (!updatedListing) {

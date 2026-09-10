@@ -45,7 +45,9 @@ router.post("/initialize", authMiddleware, async (req, res) => {
         }
 
         const currency = (process.env.PAYSTACK_CURRENCY || "NGN").toUpperCase();
-        const reference = booking.paymentReference || `booking_${booking._id}_${Date.now()}`;
+        const reference = booking.paymentStatus === "failed"
+            ? `booking_${booking._id}_${Date.now()}`
+            : (booking.paymentReference || `booking_${booking._id}_${Date.now()}`);
         const response = await paystack.post("/transaction/initialize", {
             amount,
             email: user.email,
@@ -59,6 +61,8 @@ router.post("/initialize", authMiddleware, async (req, res) => {
 
         booking.paymentReference = response.data.data.reference;
         booking.currency = currency.toLowerCase();
+        booking.paymentStatus = "unpaid";
+        booking.status = "pending_payment";
         await booking.save();
 
         res.status(201).json({
@@ -71,7 +75,11 @@ router.post("/initialize", authMiddleware, async (req, res) => {
         });
     } catch (error) {
         console.error("Error initializing Paystack transaction:", error.response?.data || error.message);
-        res.status(502).json({ message: "Error initializing payment." });
+        const paystackMessage = error.response?.data?.message;
+        const statusCode = error.response?.status === 400 || error.response?.status === 422 ? 409 : 502;
+        res.status(statusCode).json({
+            message: paystackMessage || "Unable to start payment. Please try again.",
+        });
     }
 });
 
@@ -90,7 +98,7 @@ router.post("/verify", authMiddleware, async (req, res) => {
 
         const response = await paystack.get(`/transaction/verify/${encodeURIComponent(reference)}`);
         const transaction = response.data.data;
-        if (!response.data.status || transaction.reference !== booking.paymentReference) {
+        if (!response.data.status || !transaction || transaction.reference !== booking.paymentReference) {
             return res.status(400).json({ message: "Paystack transaction verification failed." });
         }
 
@@ -109,7 +117,9 @@ router.post("/verify", authMiddleware, async (req, res) => {
         res.json({ message: "Paystack payment verified.", booking });
     } catch (error) {
         console.error("Error verifying Paystack transaction:", error.response?.data || error.message);
-        res.status(502).json({ message: "Error verifying payment." });
+        res.status(502).json({
+            message: error.response?.data?.message || "Unable to verify payment. Please try again.",
+        });
     }
 });
 

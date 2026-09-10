@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 dotenv.config();
 const authRoutes = require("./src/routes/auth");
+const adminRoutes = require("./src/routes/admin");
 const profileRoutes = require("./src/routes/profile");
 const listingsRoutes = require("./src/routes/listings");
 const bookingRoutes = require("./src/routes/booking");
@@ -11,6 +12,9 @@ const paymentRoutes = require("./src/routes/payments");
 const uploadRoutes = require("./src/routes/uploads");
 const cors = require("cors");
 const path = require("path");
+// const dns = require("dns");
+
+// dns.setServers(["8.8.8.8"]);
 
 const corsOptions = {
     origin: "http://localhost:5173",
@@ -23,6 +27,7 @@ app.post("/api/payments/webhook", express.raw({ type: "application/json" }), pay
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/listings", listingsRoutes);
 app.use("/api/bookings", bookingRoutes);
