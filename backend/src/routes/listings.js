@@ -5,7 +5,11 @@ const authMiddleware = require("../middleware/Authentication");
 
 router.get("/", async (req, res) => {
     try {
-        const { page = 1, limit = 10, location, priceMin, priceMax, amenities } = req.query;
+        const { page = 1, limit = 10, location, priceMin, priceMax, amenities, sortBy = "createdAt", order = "desc" } = req.query;
+        const allowedSortFields = ["createdAt", "updatedAt", "price", "title"];
+        if (!allowedSortFields.includes(sortBy) || !["asc", "desc"].includes(order)) {
+            return res.status(400).json({ message: "Invalid listing sort options." });
+        }
         const pageNumber = Number(page);
         const limitNumber = Number(limit);
         const minimumPrice = priceMin === undefined ? undefined : Number(priceMin);
@@ -34,6 +38,7 @@ router.get("/", async (req, res) => {
         }
 
         const listings = await Listing.find(filter)
+            .sort({ [sortBy]: order === "asc" ? 1 : -1 })
             .skip((pageNumber - 1) * limitNumber)
             .limit(limitNumber);
             res.json({ listings, page: pageNumber, limit: limitNumber });
@@ -48,7 +53,14 @@ router.get("/my-listings", authMiddleware, async (req, res) => {
         if (!req.user.isAdmin) {
             return res.status(403).json({ message: "Access denied. Admins only." });
         }
-        const myListings = await Listing.find({ hostId: req.user.userId });
+        const { location, sortBy = "createdAt", order = "desc" } = req.query;
+        const allowedSortFields = ["createdAt", "updatedAt", "price", "title"];
+        if (!allowedSortFields.includes(sortBy) || !["asc", "desc"].includes(order)) {
+            return res.status(400).json({ message: "Invalid listing sort options." });
+        }
+        const filter = { hostId: req.user.userId };
+        if (location) filter.location = { $regex: location, $options: "i" };
+        const myListings = await Listing.find(filter).sort({ [sortBy]: order === "asc" ? 1 : -1 });
         res.json({ listings: myListings });
     } catch (error) {
         console.error("Error fetching my listings:", error);

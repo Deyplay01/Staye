@@ -1,0 +1,148 @@
+import React, { useEffect, useState } from "react";
+import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import Navbar from "../../components/layout/Navbar";
+import Footer from "../../components/layout/Footer";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import EmptyState from "../../components/common/EmptyState";
+import Button from "../../components/common/Button";
+import { fetchListingById } from "../../api/listings";
+import { createBooking } from "../../api/bookings";
+import { getImageUrl, initializePaystackPayment } from "../../api";
+import { calculateNights, formatDateLong } from "../../utils/date";
+import { calculateTotalCost, formatPrice } from "../../utils/price";
+
+export default function BookingPage() {
+  const { listingId } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const checkIn = searchParams.get("checkIn");
+  const checkOut = searchParams.get("checkOut");
+
+  const [listing, setListing] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    fetchListingById(listingId).then(setListing).finally(() => setIsLoading(false));
+  }, [listingId]);
+
+  const nights = calculateNights(checkIn, checkOut);
+  const estimatedTotal = listing ? calculateTotalCost(listing.price, nights) : 0;
+
+  async function handleConfirm() {
+    setSubmitError("");
+    setIsSubmitting(true);
+    try {
+      const booking = await createBooking({ listingId, checkIn, checkOut });
+      const payment = await initializePaystackPayment(booking._id, localStorage.getItem("staye_token"));
+      if (!payment.authorizationUrl) throw new Error("Paystack did not return a payment URL.");
+      window.location.assign(payment.authorizationUrl);
+    } catch (err) {
+      const status = err?.response?.status;
+      const serverMessage = err?.response?.data?.message;
+      if (status === 409) {
+        setSubmitError(serverMessage || "Those dates were just booked by someone else. Try different dates.");
+      } else {
+        setSubmitError(serverMessage || err.message || "Something went wrong creating this booking. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <LoadingSpinner label="Preparing your booking..." />
+      </div>
+    );
+  }
+
+  if (!listing || !checkIn || !checkOut) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="mx-auto max-w-3xl px-4 py-16">
+          <EmptyState
+            title="We couldn't set up this booking"
+            description="The listing or dates are missing. Please start again from the listing page."
+            action={
+              <Link to="/" className="text-sm font-semibold text-brand hover:underline">
+                Back to all listings
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <Button type="button" variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            Back to listing
+          </Button>
+        </div>
+
+        <h1 className="mb-6 text-2xl font-extrabold text-ink-900">Review your booking</h1>
+
+        <div className="rounded-2xl border border-ink-300 bg-white p-6 shadow-card">
+          <div className="flex gap-3">
+            <img
+              src={getImageUrl(listing.images?.[0]) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
+              alt=""
+              className="h-16 w-20 rounded-sm object-cover"
+            />
+            <div>
+              <p className="font-semibold text-ink-900">{listing.title}</p>
+              <p className="text-xs text-ink-500">{listing.location}</p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-1 border-t border-ink-300 pt-4 text-sm text-ink-700">
+            <div className="flex justify-between">
+              <span>Check-in</span>
+              <span className="font-medium">{formatDateLong(checkIn)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Check-out</span>
+              <span className="font-medium">{formatDateLong(checkOut)}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-1 border-t border-ink-300 pt-4 text-sm">
+            <div className="flex justify-between text-ink-500">
+              <span>
+                {formatPrice(listing.price)} × {nights} night{nights !== 1 ? "s" : ""}
+              </span>
+              <span>{formatPrice(estimatedTotal)}</span>
+            </div>
+            <div className="flex justify-between text-base font-bold text-ink-900">
+              <span>Estimated total</span>
+              <span>{formatPrice(estimatedTotal)}</span>
+            </div>
+          </div>
+
+          {submitError && (
+            <p className="mt-4 rounded-sm bg-red-50 px-3 py-2 text-sm text-danger">{submitError}</p>
+          )}
+
+          <p className="mt-4 text-xs text-ink-500">You will be redirected to Paystack to complete payment securely.</p>
+
+          <Button className="mt-4 w-full" size="lg" disabled={isSubmitting} onClick={handleConfirm}>
+            {isSubmitting ? "Opening payment..." : "Continue to payment"}
+          </Button>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+}

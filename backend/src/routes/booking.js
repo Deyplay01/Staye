@@ -183,6 +183,12 @@ router.get("/admin-bookings", authMiddleware, async (req, res) => {
             return res.status(403).json({ message: "Access denied. Admins only." });
         }
 
+        const { sortBy = "createdAt", order = "desc" } = req.query;
+        const allowedSortFields = ["createdAt", "updatedAt", "checkIn", "checkOut"];
+        if (!allowedSortFields.includes(sortBy) || !["asc", "desc"].includes(order)) {
+            return res.status(400).json({ message: "Invalid booking sort options." });
+        }
+
         const listingFilter = { hostId: req.user.userId };
         if (req.query.listingId) {
             if (!mongoose.isValidObjectId(req.query.listingId)) {
@@ -205,7 +211,7 @@ router.get("/admin-bookings", authMiddleware, async (req, res) => {
         const bookings = await Booking.find(bookingFilter)
             .populate("listingId", "title location price totalRooms")
             .populate("userId", "name email")
-            .sort({ createdAt: -1 });
+            .sort({ [sortBy]: order === "asc" ? 1 : -1 });
 
         res.json({ bookings, count: bookings.length });
     } catch (error) {

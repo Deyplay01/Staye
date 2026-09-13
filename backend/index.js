@@ -13,9 +13,9 @@ const uploadRoutes = require("./src/routes/uploads");
 const Listing = require("./src/models/Listings");
 const cors = require("cors");
 const path = require("path");
-// const dns = require("dns");
+const dns = require("dns");
 
-// dns.setServers(["8.8.8.8"]);
+dns.setServers(["8.8.8.8"]);
 
 const corsOptions = {
     origin: "http://localhost:5173",

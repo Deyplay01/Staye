@@ -48,12 +48,15 @@ router.post("/initialize", authMiddleware, async (req, res) => {
         const reference = booking.paymentStatus === "failed"
             ? `booking_${booking._id}_${Date.now()}`
             : (booking.paymentReference || `booking_${booking._id}_${Date.now()}`);
+        const callbackUrl = process.env.PAYSTACK_CALLBACK_URL;
         const response = await paystack.post("/transaction/initialize", {
             amount,
             email: user.email,
             currency,
             reference,
-            ...(process.env.PAYSTACK_CALLBACK_URL ? { callback_url: process.env.PAYSTACK_CALLBACK_URL } : {}),
+            ...(callbackUrl
+                ? { callback_url: `${callbackUrl}${callbackUrl.includes("?") ? "&" : "?"}bookingId=${booking._id}` }
+                : {}),
             metadata: { bookingId: booking._id.toString(), userId: req.user.userId.toString() },
         });
 
