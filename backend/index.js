@@ -17,8 +17,12 @@ const dns = require("dns");
 
 dns.setServers(["8.8.8.8"]);
 
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 const corsOptions = {
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: "GET,PUT,POST,DELETE",
     credentials: "true"
 };

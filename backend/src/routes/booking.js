@@ -71,6 +71,21 @@ router.post("/", authMiddleware, async (req, res) => {
                     error.statusCode = 404;
                     throw error;
                 }
+                const existingUserBooking = await Booking.findOne({
+                    listingId,
+                    userId: req.user.userId,
+                    $or: [
+                        { status: "confirmed" },
+                        { status: "pending_payment", paymentStatus: "unpaid" },
+                    ],
+                    checkIn: { $lt: dates.end },
+                    checkOut: { $gt: dates.start },
+                }).session(session);
+                if (existingUserBooking) {
+                    const error = new Error("You already have an active booking for this listing during those dates.");
+                    error.statusCode = 409;
+                    throw error;
+                }
                 const bookedRooms = await getBookedRooms(listingId, dates.start, dates.end, undefined, session);
                 if (bookedRooms + rooms > listing.totalRooms) {
                     const error = new Error(`Only ${Math.max(listing.totalRooms - bookedRooms, 0)} room(s) are available for those dates.`);
