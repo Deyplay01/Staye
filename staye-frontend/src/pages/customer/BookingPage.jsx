@@ -24,19 +24,20 @@ export default function BookingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [rooms, setRooms] = useState(1);
 
   useEffect(() => {
     fetchListingById(listingId).then(setListing).finally(() => setIsLoading(false));
   }, [listingId]);
 
   const nights = calculateNights(checkIn, checkOut);
-  const estimatedTotal = listing ? calculateTotalCost(listing.price, nights) : 0;
+  const estimatedTotal = listing ? calculateTotalCost(listing.price * rooms, nights) : 0;
 
   async function handleConfirm() {
     setSubmitError("");
     setIsSubmitting(true);
     try {
-      const booking = await createBooking({ listingId, checkIn, checkOut });
+      const booking = await createBooking({ listingId, checkIn, checkOut, rooms });
       const payment = await initializePaystackPayment(booking._id, localStorage.getItem("staye_token"));
       if (!payment.authorizationUrl) throw new Error("Paystack did not return a payment URL.");
       window.location.assign(payment.authorizationUrl);
@@ -118,10 +119,27 @@ export default function BookingPage() {
             </div>
           </div>
 
+          <label className="mt-4 block border-t border-ink-300 pt-4">
+            <span className="mb-1.5 block text-sm font-semibold text-ink-700">Number of rooms</span>
+            <input
+              type="number"
+              min="1"
+              max={listing.totalRooms || 1}
+              step="1"
+              value={rooms}
+              onChange={(event) => {
+                const roomCount = Number(event.target.value);
+                setRooms(Math.min(Math.max(roomCount || 1, 1), listing.totalRooms || 1));
+              }}
+              className="w-28 rounded-xl border border-ink-300 bg-white px-3 py-3 text-sm outline-none focus:border-brand"
+            />
+            <span className="mt-1 block text-xs text-ink-500">Up to {listing.totalRooms || 1} rooms before checking current availability.</span>
+          </label>
+
           <div className="mt-4 space-y-1 border-t border-ink-300 pt-4 text-sm">
             <div className="flex justify-between text-ink-500">
               <span>
-                {formatPrice(listing.price)} × {nights} night{nights !== 1 ? "s" : ""}
+                {formatPrice(listing.price)} × {rooms} room{rooms !== 1 ? "s" : ""} × {nights} night{nights !== 1 ? "s" : ""}
               </span>
               <span>{formatPrice(estimatedTotal)}</span>
             </div>
