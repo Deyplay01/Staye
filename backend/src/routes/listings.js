@@ -5,7 +5,11 @@ const authMiddleware = require("../middleware/Authentication");
 
 router.get("/", async (req, res) => {
     try {
-        const { page = 1, limit = 10, location, priceMin, priceMax, amenities } = req.query;
+        const { page = 1, limit = 10, location, priceMin, priceMax, amenities, sortBy = "createdAt", order = "desc" } = req.query;
+        const allowedSortFields = ["createdAt", "updatedAt", "price", "title"];
+        if (!allowedSortFields.includes(sortBy) || !["asc", "desc"].includes(order)) {
+            return res.status(400).json({ message: "Invalid listing sort options." });
+        }
         const pageNumber = Number(page);
         const limitNumber = Number(limit);
         const minimumPrice = priceMin === undefined ? undefined : Number(priceMin);
@@ -34,6 +38,7 @@ router.get("/", async (req, res) => {
         }
 
         const listings = await Listing.find(filter)
+            .sort({ [sortBy]: order === "asc" ? 1 : -1 })
             .skip((pageNumber - 1) * limitNumber)
             .limit(limitNumber);
             res.json({ listings, page: pageNumber, limit: limitNumber });
@@ -48,7 +53,14 @@ router.get("/my-listings", authMiddleware, async (req, res) => {
         if (!req.user.isAdmin) {
             return res.status(403).json({ message: "Access denied. Admins only." });
         }
-        const myListings = await Listing.find({ hostId: req.user.userId });
+        const { location, sortBy = "createdAt", order = "desc" } = req.query;
+        const allowedSortFields = ["createdAt", "updatedAt", "price", "title"];
+        if (!allowedSortFields.includes(sortBy) || !["asc", "desc"].includes(order)) {
+            return res.status(400).json({ message: "Invalid listing sort options." });
+        }
+        const filter = { hostId: req.user.userId };
+        if (location) filter.location = { $regex: location, $options: "i" };
+        const myListings = await Listing.find(filter).sort({ [sortBy]: order === "asc" ? 1 : -1 });
         res.json({ listings: myListings });
     } catch (error) {
         console.error("Error fetching my listings:", error);
@@ -78,8 +90,8 @@ router.post("/", authMiddleware, async (req, res) => {
         if (!req.user.isAdmin) {
             return res.status(403).json({ message: "Access denied. Admins only." });
         }
-        const { title, description, price, location, images, amenities } = req.body;
-        const newListing = new Listing({ title, description, price, location, images, amenities, hostId: req.user.userId });
+        const { title, description, price, location, images, amenities, totalRooms } = req.body;
+        const newListing = new Listing({ title, description, price, location, images, amenities, totalRooms, hostId: req.user.userId });
         await newListing.save();
         res.status(201).json({ message: "Listing created successfully", listing: newListing });
     } catch (error) {
@@ -97,10 +109,10 @@ router.put("/:id", authMiddleware, async (req, res) => {
         if (!require("mongoose").isValidObjectId(req.params.id)) {
             return res.status(400).json({ message: "Invalid listing ID." });
         }
-        const { title, description, price, location, images, amenities } = req.body;
+        const { title, description, price, location, images, amenities, totalRooms } = req.body;
         const updatedListing = await Listing.findByIdAndUpdate(
-            req.params.id,
-            { $set: { title, description, price, location, images, amenities } },
+            { _id: req.params.id, hostId: req.user.userId },
+            { $set: { title, description, price, location, images, amenities, totalRooms } },
             { new: true, runValidators: true }
         );
         if (!updatedListing) {
@@ -122,7 +134,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
         if (!require("mongoose").isValidObjectId(req.params.id)) {
             return res.status(400).json({ message: "Invalid listing ID." });
         }
-        const deletedListing = await Listing.findByIdAndDelete(req.params.id);
+        const deletedListing = await Listing.findOneAndDelete({ _id: req.params.id, hostId: req.user.userId });
         if (!deletedListing) {
             return res.status(404).json({ message: "Listing not found" });
         }

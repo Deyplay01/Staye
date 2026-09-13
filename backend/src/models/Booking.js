@@ -19,6 +19,16 @@ const bookingSchema = new mongoose.Schema({
         type: Date,
         required: true,
     },
+    rooms: {
+        type: Number,
+        required: true,
+        min: 1,
+        default: 1,
+        validate: {
+            validator: Number.isInteger,
+            message: "Rooms must be a whole number.",
+        },
+    },
     status: {
         type: String,
         enum: ["pending_payment", "confirmed", "cancelled"],
