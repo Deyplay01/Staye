@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { loginUser, registerUser, clearSession } from "../api/auth";
+import { loginUser, registerUser, clearSession, loginwithGoogle, loginAdminWithGoogle, registerAdminWithGoogle } from "../api/auth";
 
 const AuthContext = createContext(null);
 
@@ -55,6 +55,25 @@ export function AuthProvider({ children }) {
     return profile;
   }
 
+   // 2. ADD THIS NEW GOOGLE LOGIN HANDLER HERE
+  async function loginGoogle(googleToken) {
+    const { token, user: profile } = await loginwithGoogle(googleToken);
+    persistSession(token, profile);
+    return profile;
+  }
+
+  async function loginAdminGoogle(googleToken) {
+    const { token, user: profile } = await loginAdminWithGoogle(googleToken);
+    persistSession(token, profile);
+    return profile;
+  }
+
+  async function registerAdminGoogle(googleToken, registrationKey) {
+    const { token, user: profile } = await registerAdminWithGoogle(googleToken, registrationKey);
+    persistSession(token, profile);
+    return profile;
+  }
+
   async function register(name, email, password) {
     const { token, user: profile } = await registerUser({ name, email, password });
     // The register endpoint doesn't return isAdmin — new accounts are never admins anyway.
@@ -77,6 +96,9 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        loginGoogle,
+        loginAdminGoogle,
+        registerAdminGoogle,
       }}
     >
       {children}

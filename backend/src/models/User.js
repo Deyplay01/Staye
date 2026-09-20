@@ -24,7 +24,11 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
+    },
+    google_id: {
+      type: String,
+      default: null,
     },
   },
   { timestamps: true },

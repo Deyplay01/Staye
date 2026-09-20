@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import ListingsTable from "../../components/admin/ListingsTable";
+import ListingRoomsPanel from "../../components/admin/ListingRoomsPanel";
 import ListingFormModal from "../../components/admin/ListingFormModal";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import EmptyState from "../../components/common/EmptyState";
@@ -63,17 +64,29 @@ export default function AdminListingsPage() {
     }
   }
 
+  async function handleRoomSave(listing, rooms) {
+    const updated = await updateListing(listing._id, {
+      title: listing.title,
+      description: listing.description,
+      location: listing.location,
+      images: listing.images || [],
+      amenities: listing.amenities || [],
+      rooms,
+    });
+    setListings((prev) => prev.map((item) => (item._id === updated._id ? updated : item)));
+  }
+
   return (
     <AdminLayout>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-ink-900">Listings</h1>
+        <h1 className="text-2xl font-bold text-ink-900">Listings</h1>
         <Button onClick={() => setModalListing(null)}>
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add listing
         </Button>
       </div>
 
-      <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-ink-300 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:p-5">
+      <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-ink-300 bg-white p-4 shadow-card sm:p-5 lg:flex-row lg:items-center">
         <label className="flex flex-1 items-center gap-2 rounded-sm border border-ink-300 px-3 py-2">
           <Search className="h-4 w-4 text-ink-500" aria-hidden="true" />
           <input
@@ -88,7 +101,6 @@ export default function AdminListingsPage() {
           <option value="createdAt">Date created</option>
           <option value="updatedAt">Date modified</option>
           <option value="title">Title</option>
-          <option value="price">Price</option>
         </select>
         <select value={filters.order} onChange={(event) => handleFilterChange("order", event.target.value)} className="rounded-sm border border-ink-300 px-3 py-2 text-sm">
           <option value="asc">Ascending</option>
@@ -112,7 +124,23 @@ export default function AdminListingsPage() {
           action={<Button onClick={() => setModalListing(null)}>Add listing</Button>}
         />
       ) : (
-        <ListingsTable listings={listings} onEdit={setModalListing} onDelete={handleDelete} />
+        <>
+          <ListingsTable listings={listings} onEdit={setModalListing} onDelete={handleDelete} />
+          <div className="mt-6 space-y-4">
+            <div>
+              <p className="staye-eyebrow">Inventory</p>
+              <h2 className="mt-1 text-xl font-bold text-navy-900">Rooms by listing</h2>
+              <p className="mt-1 text-sm text-ink-500">Update room names, descriptions, prices, amenities, and available units without changing the listing details.</p>
+            </div>
+            {listings.map((listing) => (
+              <ListingRoomsPanel
+                key={listing._id}
+                listing={listing}
+                onSave={(rooms) => handleRoomSave(listing, rooms)}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {modalListing !== undefined && (

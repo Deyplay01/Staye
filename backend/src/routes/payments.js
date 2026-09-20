@@ -3,8 +3,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 const axios = require("axios");
 const Booking = require("../models/Booking");
+const Listing = require("../models/Listings");
 const { User } = require("../models/User");
 const authMiddleware = require("../middleware/Authentication");
+const { createNotification } = require("../utils/notifications");
 
 const router = express.Router();
 const paystack = axios.create({
@@ -45,9 +47,7 @@ router.post("/initialize", authMiddleware, async (req, res) => {
         }
 
         const currency = (process.env.PAYSTACK_CURRENCY || "NGN").toUpperCase();
-        const reference = booking.paymentStatus === "failed"
-            ? `booking_${booking._id}_${Date.now()}`
-            : (booking.paymentReference || `booking_${booking._id}_${Date.now()}`);
+        const reference = `booking_${booking._id}_${Date.now()}`;
         const callbackUrl = process.env.PAYSTACK_CALLBACK_URL;
         const response = await paystack.post("/transaction/initialize", {
             amount,
@@ -96,6 +96,7 @@ router.post("/verify", authMiddleware, async (req, res) => {
 
         const booking = await Booking.findOne({ _id: bookingId, userId: req.user.userId });
         if (!booking) return res.status(404).json({ message: "Booking not found." });
+        const wasPaid = booking.paymentStatus === "paid";
         if (booking.paymentReference !== reference) return res.status(400).json({ message: "Paystack reference does not belong to this booking." });
         if (booking.status === "cancelled") return res.status(400).json({ message: "Cancelled bookings cannot be confirmed." });
 
@@ -115,12 +116,54 @@ router.post("/verify", authMiddleware, async (req, res) => {
         } else if (["failed", "abandoned"].includes(transaction.status)) {
             booking.paymentStatus = "failed";
             await booking.save();
+            const listing = await Listing.findById(booking.listingId).select("hostId title");
+            const failureNotifications = [createNotification({
+                userId: booking.userId,
+                type: "payment_failed",
+                title: "Payment needs attention",
+                message: `Your booking payment is ${transaction.status}. You can try again from the booking page.`,
+                bookingId: booking._id,
+                listingId: booking.listingId,
+            })];
+            if (listing && listing.hostId.toString() !== booking.userId.toString()) {
+                failureNotifications.push(createNotification({
+                    userId: listing.hostId,
+                    type: "payment_failed",
+                    title: "Booking payment failed",
+                    message: `${listing.title} has a booking with an incomplete payment.`,
+                    bookingId: booking._id,
+                    listingId: booking.listingId,
+                }));
+            }
+            await Promise.all(failureNotifications);
             return res.status(402).json({ message: `Payment is not complete: ${transaction.status}.`, booking });
         } else {
             return res.status(202).json({ message: `Payment is still processing: ${transaction.status}.`, booking });
         }
 
         await booking.save();
+        if (!wasPaid) {
+            const listing = await Listing.findById(booking.listingId).select("hostId title");
+            const paymentNotifications = [createNotification({
+                userId: booking.userId,
+                type: "payment_confirmed",
+                title: "Payment confirmed",
+                message: "Your booking payment has been confirmed.",
+                bookingId: booking._id,
+                listingId: booking.listingId,
+            })];
+            if (listing && listing.hostId.toString() !== booking.userId.toString()) {
+                paymentNotifications.push(createNotification({
+                    userId: listing.hostId,
+                    type: "payment_confirmed",
+                    title: "Booking payment received",
+                    message: `${listing.title} has received payment for a booking.`,
+                    bookingId: booking._id,
+                    listingId: booking.listingId,
+                }));
+            }
+            await Promise.all(paymentNotifications);
+        }
         res.json({ message: "Paystack payment verified.", booking });
     } catch (error) {
         console.error("Error verifying Paystack transaction:", error.response?.data || error.message);
@@ -155,6 +198,26 @@ router.post("/refund", authMiddleware, async (req, res) => {
         booking.paymentStatus = "refunded";
         booking.status = "cancelled";
         await booking.save();
+        const listing = await Listing.findById(booking.listingId).select("hostId title");
+        const refundNotifications = [createNotification({
+            userId: booking.userId,
+            type: "payment_refunded",
+            title: "Payment refunded",
+            message: "Your payment was refunded and the booking was cancelled.",
+            bookingId: booking._id,
+            listingId: booking.listingId,
+        })];
+        if (listing && listing.hostId.toString() !== booking.userId.toString()) {
+            refundNotifications.push(createNotification({
+                userId: listing.hostId,
+                type: "payment_refunded",
+                title: "Booking refunded",
+                message: `${listing.title} has had a booking refunded.`,
+                bookingId: booking._id,
+                listingId: booking.listingId,
+            }));
+        }
+        await Promise.all(refundNotifications);
         res.json({ message: "Payment refunded and booking cancelled.", booking });
     } catch (error) {
         console.error("Error refunding payment:", error.response?.data || error.message);
@@ -195,6 +258,26 @@ async function handleWebhook(req, res) {
             booking.paymentStatus = "paid";
             booking.status = "confirmed";
             await booking.save();
+            const listing = await Listing.findById(booking.listingId).select("hostId title");
+            const webhookNotifications = [createNotification({
+                userId: booking.userId,
+                type: "payment_confirmed",
+                title: "Payment confirmed",
+                message: "Your booking payment has been confirmed.",
+                bookingId: booking._id,
+                listingId: booking.listingId,
+            })];
+            if (listing && listing.hostId.toString() !== booking.userId.toString()) {
+                webhookNotifications.push(createNotification({
+                    userId: listing.hostId,
+                    type: "payment_confirmed",
+                    title: "Booking payment received",
+                    message: `${listing.title} has received payment for a booking.`,
+                    bookingId: booking._id,
+                    listingId: booking.listingId,
+                }));
+            }
+            await Promise.all(webhookNotifications);
         }
     }
 

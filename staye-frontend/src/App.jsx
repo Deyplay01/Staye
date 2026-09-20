@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useLayoutEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
@@ -9,6 +9,9 @@ import ListingDetailsPage from "./pages/customer/ListingDetailsPage";
 import BookingPage from "./pages/customer/BookingPage";
 import ConfirmationPage from "./pages/customer/ConfirmationPage";
 import MyBookingsPage from "./pages/customer/MyBookingsPage";
+import UserDashboardPage from "./pages/customer/UserDashboardPage";
+import ReceiptPage from "./pages/customer/ReceiptPage";
+import NotificationsPage from "./pages/customer/NotificationsPage";
 import ProfilePage from "./pages/customer/ProfilePage";
 
 import LoginPage from "./pages/auth/LoginPage";
@@ -19,10 +22,24 @@ import AdminRegisterPage from "./pages/admin/AdminRegisterPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminListingsPage from "./pages/admin/AdminListingsPage";
 import AdminBookingsPage from "./pages/admin/AdminBookingsPage";
+import AdminBookingVerificationPage from "./pages/admin/AdminBookingVerificationPage";
+import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage";
+
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname, search]);
+
+  return null;
+}
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       {/* Customer side */}
       <Route path="/" element={<HomePage />} />
       <Route path="/listings" element={<ListingsPage />} />
@@ -60,10 +77,34 @@ export default function App() {
         }
       />
       <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <UserDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/my-bookings"
         element={
           <ProtectedRoute>
             <MyBookingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/receipt/:bookingId"
+        element={
+          <ProtectedRoute>
+            <ReceiptPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />
@@ -107,10 +148,27 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/verify-booking"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminBookingVerificationPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/notifications"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminNotificationsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

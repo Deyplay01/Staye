@@ -3,9 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import { registerAdmin } from "../../api/auth";
 import { useAuth } from "../../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function AdminRegisterPage() {
-  const { login } = useAuth();
+  const { login, registerAdminGoogle } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", registrationKey: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +30,23 @@ export default function AdminRegisterPage() {
       navigate("/admin/dashboard");
     } catch (err) {
       setError(err?.response?.data?.message || "Admin registration failed. Please check your details.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleSuccess(response) {
+    setError("");
+    if (!form.registrationKey) {
+      setError("Enter the registration key before using Google sign-up.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await registerAdminGoogle(response.credential, form.registrationKey);
+      navigate("/admin/dashboard");
+    } catch (err) {
+      setError(err?.response?.data?.message || "Admin Google registration failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -60,6 +78,15 @@ export default function AdminRegisterPage() {
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Registration key</span><input required type="password" value={form.registrationKey} onChange={(event) => update("registrationKey", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
             <Button type="submit" className="w-full bg-[#243119] hover:bg-[#629460]" size="lg" disabled={isSubmitting}>{isSubmitting ? "Creating workspace..." : "Create host account"}</Button>
           </form>
+
+          <div className="my-5 flex items-center gap-2">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs uppercase tracking-wider text-slate-400">or</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="flex justify-center">
+            <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-up was cancelled.")} theme="outline" size="large" shape="rounded" width="320" />
+          </div>
 
           <p className="mt-6 text-center text-sm text-[#629460]">Already a host? <Link to="/admin/login" className="font-bold text-[#243119] hover:underline">Log in</Link></p>
           <Link to="/" className="mt-3 block text-center text-xs text-[#629460] hover:underline">Back to homepage</Link>

@@ -9,26 +9,6 @@ const listingSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    price: {
-        type: Number,
-        required: true,
-        min: 0,
-    },
-    totalRooms: {
-        type: Number,
-        required: true,
-        min: 1,
-        default: 1,
-        validate: {
-            validator: Number.isInteger,
-            message: "Total rooms must be a whole number.",
-        },
-    },
-    capacityVersion: {
-        type: Number,
-        default: 0,
-        select: false,
-    },
     location: {
         type: String,
         required: true,

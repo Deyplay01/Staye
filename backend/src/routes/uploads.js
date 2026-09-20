@@ -37,10 +37,9 @@ router.post("/images", authMiddleware, (req, res) => {
             return res.status(400).json({ message: "At least one image is required." });
         }
 
-        const baseUrl = `${req.protocol}://${req.get("host")}`;
         const images = req.files.map((file) => ({
             filename: file.filename,
-            url: `${baseUrl}/uploads/${file.filename}`,
+            url: `/uploads/${file.filename}`,
         }));
         res.status(201).json({ images });
     });

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 
 /**
  * Deliberately separate from the customer /login page. Calls the same
@@ -11,7 +12,7 @@ import { Link } from "react-router-dom";
  * account can log in here but will just be told this isn't an admin login.
  */
 export default function AdminLoginPage() {
-  const { login, logout } = useAuth();
+  const { login, logout, loginAdminGoogle } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -33,6 +34,19 @@ export default function AdminLoginPage() {
       navigate("/admin/dashboard");
     } catch (err) {
       setError(err?.response?.data?.message || "Login failed. Check your email and password.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleSuccess(response) {
+    setError("");
+    setIsSubmitting(true);
+    try {
+      await loginAdminGoogle(response.credential);
+      navigate("/admin/dashboard");
+    } catch (err) {
+      setError(err?.response?.data?.message || "This Google account does not have admin access.");
     } finally {
       setIsSubmitting(false);
     }
@@ -76,6 +90,15 @@ export default function AdminLoginPage() {
             {isSubmitting ? "Logging in..." : "Log in"}
           </Button>
         </form>
+
+        <div className="my-5 flex items-center gap-2">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs uppercase tracking-wider text-slate-400">or</span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
+        <div className="flex justify-center">
+          <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-in was cancelled.")} theme="outline" size="large" shape="rounded" width="320" />
+        </div>
 
         <p className="mt-4 text-center text-sm text-ink-500">
           Need a host account? <Link to="/admin/register" className="font-bold text-brand hover:underline">Register here</Link>

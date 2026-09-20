@@ -3,9 +3,10 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
 import Button from "../../components/common/Button";
 import { useAuth } from "../../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, loginGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
@@ -34,6 +35,23 @@ export default function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function handleGoogleSuccess(credentialResponse) {
+    setError("");
+    setIsSubmitting(true);
+    try {
+      await loginGoogle(credentialResponse.credential);
+      navigate(returnTo);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Google sign-up failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleGoogleError() {
+    setError("Google Sign-Up popup closed or cancelled.");
   }
 
   return (
@@ -89,6 +107,23 @@ export default function RegisterPage() {
               {isSubmitting ? "Creating account..." : "Sign up"}
             </Button>
           </form>
+
+          <div className="my-5 flex items-center justify-center gap-2">
+            <div className="h-[1px] w-full bg-slate-200"></div>
+            <span className="text-xs uppercase tracking-wider text-slate-400">or</span>
+            <div className="h-[1px] w-full bg-slate-200"></div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="outline"
+              size="large"
+              shape="rounded"
+              width="320"
+            />
+          </div>
 
           <p className="mt-4 text-center text-sm text-ink-500">
             Already have an account?{" "}
