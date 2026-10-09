@@ -195,7 +195,7 @@ export default function Navbar() {
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-500 hover:bg-white/70"
           >
             {user?.isAdmin ? <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> : <UserCog className="h-4 w-4" aria-hidden="true" />}
-            {user?.isAdmin ? "Dashboard" : "Admin login"}
+            {user?.isAdmin ? "Dashboard" : "Host login"}
           </Link>
         </div>
       )}
