@@ -7,6 +7,7 @@ const Listing = require("../models/Listings");
 const { User } = require("../models/User");
 const authMiddleware = require("../middleware/Authentication");
 const { createNotification } = require("../utils/notifications");
+const { resolvePaymentCallbackUrl } = require("../utils/paymentCallbackUrl");
 
 const router = express.Router();
 const paystack = axios.create({
@@ -48,15 +49,27 @@ router.post("/initialize", authMiddleware, async (req, res) => {
 
         const currency = (process.env.PAYSTACK_CURRENCY || "NGN").toUpperCase();
         const reference = `booking_${booking._id}_${Date.now()}`;
-        const callbackUrl = process.env.PAYSTACK_CALLBACK_URL;
+        const callbackUrl = resolvePaymentCallbackUrl({
+            callbackUrl: process.env.PAYSTACK_CALLBACK_URL,
+            frontendUrl: process.env.FRONTEND_URL,
+            isProduction: process.env.NODE_ENV === "production",
+        });
+        if (!callbackUrl) {
+            return res.status(503).json({ message: "A valid HTTPS payment callback URL must be configured for production." });
+        }
+        if (process.env.NODE_ENV === "production"
+            && process.env.PAYSTACK_CALLBACK_URL
+            && callbackUrl !== process.env.PAYSTACK_CALLBACK_URL.trim()) {
+            console.warn("Ignoring an unsafe Paystack callback URL and using the configured frontend URL instead.");
+        }
+        const callback = new URL(callbackUrl);
+        callback.searchParams.set("bookingId", booking._id.toString());
         const response = await paystack.post("/transaction/initialize", {
             amount,
             email: user.email,
             currency,
             reference,
-            ...(callbackUrl
-                ? { callback_url: `${callbackUrl}${callbackUrl.includes("?") ? "&" : "?"}bookingId=${booking._id}` }
-                : {}),
+            callback_url: callback.toString(),
             metadata: { bookingId: booking._id.toString(), userId: req.user.userId.toString() },
         });
 

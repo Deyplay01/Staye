@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { OAuth2Client } = require("google-auth-library");
+const { verifyGoogleCredential } = require("../utils/googleAuth");
 const dotenv = require("dotenv");
 const { User } = require("../models/User");
 const Profile = require("../models/profile");
@@ -15,20 +15,6 @@ dotenv.config();
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-async function verifyGoogleCredential(credential) {
-  const ticket = await googleClient.verifyIdToken({
-    idToken: credential,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
-  const payload = ticket.getPayload();
-  if (!payload.email || !payload.email_verified) {
-    throw new Error("Google account email is not verified.");
-  }
-  return payload;
-}
-
 async function ensureProfile(user, avatar = "") {
   const profile = await Profile.findOneAndUpdate(
     { username: user._id },
@@ -110,7 +96,7 @@ router.post("/login", async (req, res) => {
 
 router.post("/google/login", async (req, res) => {
   try {
-    const payload = await verifyGoogleCredential(req.body.credential);
+    const payload = await verifyGoogleCredential(req.body?.credential);
     const user = await User.findOne({ email: payload.email.toLowerCase() });
 
     if (!user || !["host", "admin"].includes(getUserRole(user))) {
@@ -118,6 +104,9 @@ router.post("/google/login", async (req, res) => {
     }
     if (user.status === "blocked") {
       return res.status(403).json({ message: "This account is blocked. Contact support for assistance." });
+    }
+    if (user.google_id && user.google_id !== payload.sub) {
+      return res.status(409).json({ message: "This email is linked to a different Google account." });
     }
 
     if (!user.google_id) {
@@ -129,17 +118,15 @@ router.post("/google/login", async (req, res) => {
     return res.json(hostSession(user, profile.avatar));
   } catch (error) {
     console.error("Error during host Google login:", error);
-    return res.status(401).json({ message: "Host Google authentication failed." });
+    return res.status(error.statusCode || 401).json({
+      message: error.statusCode ? error.message : "Host Google authentication failed.",
+    });
   }
 });
 
 router.post("/google/register", async (req, res) => {
-  if (!req.body.credential) {
-    return res.status(400).json({ message: "Google credential is required." });
-  }
-
   try {
-    const payload = await verifyGoogleCredential(req.body.credential);
+    const payload = await verifyGoogleCredential(req.body?.credential);
     const email = payload.email.toLowerCase();
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -156,7 +143,9 @@ router.post("/google/register", async (req, res) => {
     return res.status(201).json(hostSession(user, payload.picture || ""));
   } catch (error) {
     console.error("Error during host Google registration:", error);
-    return res.status(401).json({ message: "Host Google registration failed." });
+    return res.status(error.statusCode || 401).json({
+      message: error.statusCode ? error.message : "Host Google registration failed.",
+    });
   }
 });
 

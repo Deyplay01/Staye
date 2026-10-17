@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
 import Button from "../../components/common/Button";
+import PasswordInput from "../../components/common/PasswordInput";
+import GoogleAuthButton from "../../components/common/GoogleAuthButton";
 import { useAuth } from "../../context/AuthContext";
-import { GoogleLogin } from "@react-oauth/google";
 
 export default function LoginPage() {
   const { login, loginGoogle } = useAuth();
@@ -52,7 +53,7 @@ export default function LoginPage() {
   }
 
   function handleGoogleError() {
-    setError("Google Sign-In popup closed or cancelled.");
+    setError("Google sign-in couldn't be completed. Please try again.");
   }
 
   return (
@@ -105,9 +106,8 @@ export default function LoginPage() {
               <span className="mb-1 block text-sm font-medium text-ink-700">
                 Password
               </span>
-              <input
+              <PasswordInput
                 required
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl border border-ink-300 bg-white px-3 py-3 text-sm outline-none focus:border-brand"
@@ -129,17 +129,7 @@ export default function LoginPage() {
             <div className="h-[1px] w-full bg-slate-200"></div>
           </div>
 
-          <div className="google-button-wrapper" style={{ width: "100%" }}>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="outline"
-              size="large"
-              shape="rounded"
-              width="100%" 
-            />
-          </div>
-
+          <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} disabled={isSubmitting} />
 
           <p className="mt-4 text-center text-sm text-ink-500">
             Don't have an account?{" "}

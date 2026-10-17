@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
 import Button from "../../components/common/Button";
+import PasswordInput from "../../components/common/PasswordInput";
+import GoogleAuthButton from "../../components/common/GoogleAuthButton";
 import { useAuth } from "../../context/AuthContext";
-import { GoogleLogin } from "@react-oauth/google";
 
 export default function RegisterPage() {
   const { register, loginGoogle } = useAuth();
@@ -51,7 +52,7 @@ export default function RegisterPage() {
   }
 
   function handleGoogleError() {
-    setError("Google Sign-Up popup closed or cancelled.");
+    setError("Google sign-up couldn't be completed. Please try again.");
   }
 
   return (
@@ -93,9 +94,8 @@ export default function RegisterPage() {
             </label>
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink-700">Password</span>
-              <input
+              <PasswordInput
                 required
-                type="password"
                 minLength={6}
                 value={form.password}
                 onChange={(e) => update("password", e.target.value)}
@@ -114,16 +114,7 @@ export default function RegisterPage() {
             <div className="h-[1px] w-full bg-slate-200"></div>
           </div>
 
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="outline"
-              size="large"
-              shape="rounded"
-              width="320"
-            />
-          </div>
+          <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} text="signup_with" disabled={isSubmitting} />
 
           <p className="mt-4 text-center text-sm text-ink-500">
             Already have an account?{" "}

@@ -13,12 +13,7 @@ const bookingRoutes = require("./src/routes/booking");
 const paymentRoutes = require("./src/routes/payments");
 const uploadRoutes = require("./src/routes/uploads");
 const notificationsRoutes = require("./src/routes/notifications");
-const Listing = require("./src/models/Listings");
-const Room = require("./src/models/Room");
-const Booking = require("./src/models/Booking");
-const { createBookingReference } = require("./src/utils/bookingReference");
 const cors = require("cors");
-const path = require("path");
 const uploadDirectory = require("./src/utils/uploadDirectory");
 
 if (process.env.NODE_ENV !== 'production') {
@@ -122,55 +117,6 @@ app.use("/api/notifications", notificationsRoutes);
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
-async function migrateLegacyListings() {
-    const legacyListings = await Listing.collection.find({}).toArray();
-    let migratedCount = 0;
-    let skippedCount = 0;
-
-    for (const listing of legacyListings) {
-        const roomCount = await Room.countDocuments({ listingId: listing._id });
-        if (roomCount > 0) continue;
-
-        const price = Number(listing.price);
-        const totalRooms = Number(listing.totalRooms || 1);
-        if (!Number.isFinite(price) || price < 0 || !Number.isInteger(totalRooms) || totalRooms < 1) {
-            skippedCount += 1;
-            continue;
-        }
-
-        await Room.updateOne(
-            { listingId: listing._id, name: "Classic" },
-            {
-                $setOnInsert: {
-                    listingId: listing._id,
-                    name: "Classic",
-                    description: listing.description || "",
-                    price,
-                    totalRooms,
-                    images: Array.isArray(listing.images) ? listing.images : [],
-                    amenities: Array.isArray(listing.amenities) ? listing.amenities : [],
-                },
-            },
-            { upsert: true }
-        );
-        migratedCount += 1;
-    }
-
-    console.log(`Legacy listing migration complete: ${migratedCount} migrated, ${skippedCount} skipped.`);
-}
-
-async function migrateBookingReferences() {
-    const bookings = await Booking.find({ $or: [{ publicReference: { $exists: false } }, { publicReference: null }] }).select("_id publicReference");
-    for (const booking of bookings) {
-        let publicReference;
-        do {
-            publicReference = createBookingReference();
-        } while (await Booking.exists({ publicReference }));
-        await Booking.collection.updateOne({ _id: booking._id }, { $set: { publicReference } });
-    }
-    console.log(`Booking reference migration complete: ${bookings.length} updated.`);
-}
-
 app.get("/", (req, res) => {
   res.send("Welcome to the Hotel Booking System API");
 }
@@ -181,8 +127,6 @@ if (!MONGODB_URI || !process.env.JWT_SECRET) {
 }
 
 mongoose.connect(MONGODB_URI).then(async () => {
-    await migrateLegacyListings();
-    await migrateBookingReferences();
     app.listen(PORT, () => {
         console.log("Server running on port:", PORT);
     })

@@ -8,6 +8,8 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "migrate:booking-references": "node scripts/migrateBookingReferences.js",
+    "migrate:legacy-listings": "node scripts/migrateLegacyListings.js",
+    "migrate:legacy-images": "node scripts/migrateLegacyImages.js",
     "migrate:user-roles": "node scripts/migrateUserRoles.js",
     "bootstrap:super-admin": "node scripts/bootstrapSuperAdmin.js"
   },

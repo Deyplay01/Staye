@@ -31,6 +31,11 @@ const roomSchema = new mongoose.Schema({
             message: "Total rooms must be a whole number.",
         },
     },
+    availabilityRevision: {
+        type: Number,
+        default: 0,
+        select: false,
+    },
     images: {
         type: [String],
         default: [],
