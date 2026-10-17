@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
+import PasswordInput from "../../components/common/PasswordInput";
+import GoogleAuthButton from "../../components/common/GoogleAuthButton";
 import { useAuth } from "../../context/AuthContext";
-import { GoogleLogin } from "@react-oauth/google";
 
 export default function AdminRegisterPage() {
   const { registerHost, registerHostGoogle } = useAuth();
@@ -68,7 +69,7 @@ export default function AdminRegisterPage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Full name</span><input required value={form.name} onChange={(event) => update("name", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Email</span><input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
-            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Password</span><input required minLength={8} type="password" value={form.password} onChange={(event) => update("password", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
+            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Password</span><PasswordInput required minLength={8} value={form.password} onChange={(event) => update("password", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
             <Button type="submit" className="w-full bg-[#243119] hover:bg-[#629460]" size="lg" disabled={isSubmitting}>{isSubmitting ? "Creating workspace..." : "Create host account"}</Button>
           </form>
 
@@ -78,7 +79,7 @@ export default function AdminRegisterPage() {
             <div className="h-px flex-1 bg-slate-200" />
           </div>
           <div className="flex justify-center">
-            <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-up was cancelled.")} theme="outline" size="large" shape="rounded" width="240" />
+            <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-up couldn't be completed. Please try again.")} text="signup_with" disabled={isSubmitting} />
           </div>
 
           <p className="mt-6 text-center text-sm text-[#629460]">Already a host? <Link to="/admin/login" className="font-bold text-[#243119] hover:underline">Log in</Link></p>

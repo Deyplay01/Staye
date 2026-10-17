@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
+import PasswordInput from "../../components/common/PasswordInput";
+import GoogleAuthButton from "../../components/common/GoogleAuthButton";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
 
 /**
  * Deliberately separate from the customer /login page. Calls the same
@@ -77,9 +78,8 @@ export default function AdminLoginPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-ink-700">Password</span>
-            <input
+            <PasswordInput
               required
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-ink-300 px-3 py-3 text-sm outline-none focus:border-brand"
@@ -96,7 +96,7 @@ export default function AdminLoginPage() {
           <div className="h-px flex-1 bg-slate-200" />
         </div>
         <div className="flex justify-center">
-          <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-in was cancelled.")} theme="outline" size="large" shape="rounded" width="240" />
+          <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-in couldn't be completed. Please try again.")} disabled={isSubmitting} />
         </div>
 
         <p className="mt-4 text-center text-sm text-ink-500">

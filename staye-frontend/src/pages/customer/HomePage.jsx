@@ -43,7 +43,7 @@ export default function HomePage() {
     } catch (err) {
       setError(
         err?.response?.data?.message ||
-          "Couldn't reach the server. Make sure the backend is running and the database is connected."
+          "Couldn't reach the server."
       );
       setListings([]);
     } finally {

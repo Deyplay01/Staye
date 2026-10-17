@@ -1,4 +1,6 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+import { API_ROOT_URL } from "./api/baseUrl";
+
+const API_BASE_URL = API_ROOT_URL.replace(/\/api\/?$/, "");
 
 function authHeaders(token) {
   return token ? { Authorization: `Bearer ${token}` } : {};

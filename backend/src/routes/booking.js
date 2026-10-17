@@ -8,6 +8,7 @@ const authMiddleware = require("../middleware/Authentication");
 const { requireRoles } = require("../utils/roles");
 const { User } = require("../models/User");
 const { createNotification } = require("../utils/notifications");
+const { lockRoomAvailability } = require("../utils/roomAvailability");
 
 function parseBookingDates(checkIn, checkOut) {
     const start = new Date(checkIn);
@@ -109,6 +110,7 @@ router.post("/", authMiddleware, async (req, res) => {
                     throw error;
                 }
 
+                await lockRoomAvailability(Room, roomId, session);
                 const existingUserBooking = await Booking.findOne({
                     listingId,
                     roomId,
@@ -466,6 +468,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
                     throw error;
                 }
 
+                await lockRoomAvailability(Room, roomId, session);
                 const bookedRooms = await getBookedRooms(roomId, dates.start, dates.end, booking._id, session);
                 if (bookedRooms + rooms > room.totalRooms) {
                     const error = new Error(`Only ${Math.max(room.totalRooms - bookedRooms, 0)} room(s) are available for those dates.`);

@@ -5,7 +5,7 @@ const { User } = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
-const { OAuth2Client } = require("google-auth-library");
+const { verifyGoogleCredential } = require("../utils/googleAuth");
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -13,27 +13,11 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const Profile = require("../models/profile");
 const { getUserRole } = require("../utils/roles");
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 router.post("/google/callback", async (req, res) => {
   try {
-    const { credential } = req.body;
-
-    if (!credential) {
-      return res.status(400).json({ message: "Missing identity token." });
-    }
-
-    // 1. Verify the secure token string coming from the browser button
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
+    const payload = await verifyGoogleCredential(req.body?.credential);
     const googleId = payload["sub"];
-    const { email, name, picture, email_verified: emailVerified } = payload;
-
-    if (!email || !emailVerified) {
-      return res.status(401).json({ message: "Google account email is not verified." });
-    }
+    const { email, name, picture } = payload;
 
     let user = await User.findOne({ email: email.toLowerCase() });
     if (user?.status === "blocked") {
@@ -41,6 +25,9 @@ router.post("/google/callback", async (req, res) => {
     }
 
     if (user) {
+      if (user.google_id && user.google_id !== googleId) {
+        return res.status(409).json({ message: "This email is linked to a different Google account." });
+      }
       if (!user.google_id) {
         user.google_id = googleId;
         await user.save();
@@ -93,7 +80,9 @@ router.post("/google/callback", async (req, res) => {
     });
   } catch (error) {
     console.error("Google feature integration error:", error);
-    return res.status(401).json({ message: "Social authentication failed." });
+    return res.status(error.statusCode || 401).json({
+      message: error.statusCode ? error.message : "Social authentication failed.",
+    });
   }
 });
 

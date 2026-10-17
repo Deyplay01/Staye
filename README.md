@@ -82,6 +82,6 @@ Do not commit `.env` files or put private credentials in frontend `VITE_` variab
 
 ## Operational notes
 
-Before deploying the role model to an existing database, back it up and follow the migration and super-admin bootstrap instructions in [DEPLOYMENT.md](./DEPLOYMENT.md) and [staye-frontend/README.md](./staye-frontend/README.md). Existing `/uploads/...` image references may still depend on legacy local files; those images are not migrated to Cloudinary automatically.
+Before deploying the role model to an existing database, back it up and follow the migration and super-admin bootstrap instructions in [DEPLOYMENT.md](./DEPLOYMENT.md) and [staye-frontend/README.md](./staye-frontend/README.md). To migrate legacy `/uploads/...` image references, restore the original files locally, back up the database, run `npm run migrate:legacy-images` from `backend` to perform a dry run, and then explicitly run `npm run migrate:legacy-images -- --execute`. The script updates listing, room, and profile image references but never deletes legacy files; consult the deployment guide for details.
 
 The project does not currently provide password-account email verification, identity verification, or host payout onboarding. Add and configure suitable controls before relying on the application for verified identities or payouts.
