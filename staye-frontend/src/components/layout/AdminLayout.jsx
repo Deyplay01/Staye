@@ -1,18 +1,25 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Building2, LayoutDashboard, BedDouble, CalendarCheck2, LogOut, Home, Menu, X } from "lucide-react";
+import { Bell, Building2, LayoutDashboard, BedDouble, CalendarCheck2, LogOut, Home, Menu, X, ShieldCheck, Users } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import NotificationBell from "../common/NotificationBell";
 
 const NAV_ITEMS = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/listings", label: "Listings", icon: BedDouble },
   { to: "/admin/bookings", label: "Bookings", icon: CalendarCheck2 },
+  { to: "/admin/verify-booking", label: "Verify booking", icon: ShieldCheck },
+  { to: "/admin/notifications", label: "Notifications", icon: Bell },
 ];
 
 export default function AdminLayout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const navItems = isSuperAdmin
+    ? [...NAV_ITEMS, { to: "/admin/users", label: "Trust & safety", icon: Users }]
+    : NAV_ITEMS;
+  const workspaceName = isSuperAdmin ? "Stayé Admin" : "Stayé Host";
 
   function handleLogout() {
     logout();
@@ -22,12 +29,12 @@ export default function AdminLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-white">
       <aside className="hidden w-64 flex-col bg-navy-900 text-white sm:flex">
-        <div className="flex items-center gap-2 px-6 py-5">
-          <Building2 className="h-6 w-6" aria-hidden="true" />
-          <span className="text-lg font-extrabold">Stayé Admin</span>
+        <div className="flex items-center justify-between gap-2 px-6 py-5">
+          <div className="flex items-center gap-2"><Building2 className="h-6 w-6" aria-hidden="true" /><span className="text-lg font-bold">{workspaceName}</span></div>
+          <NotificationBell adminMode align="left" />
         </div>
         <nav className="mt-4 flex-1 space-y-1 px-3">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -66,17 +73,17 @@ export default function AdminLayout({ children }) {
 
       <div className="flex-1">
         <header className="relative z-30 flex items-center justify-between border-b border-ink-300 bg-white px-4 py-3 sm:hidden">
-          <span className="font-bold text-navy-900">Stayé / host</span>
-          <button onClick={() => setMobileNavOpen((value) => !value)} className="text-navy-900" aria-label="Toggle admin navigation">
+          <span className="font-bold text-navy-900">{workspaceName}</span>
+          <div className="flex items-center gap-3"><NotificationBell adminMode /><button onClick={() => setMobileNavOpen((value) => !value)} className="text-navy-900" aria-label="Toggle admin navigation">
             {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          </button></div>
           {mobileNavOpen && (
             <nav className="absolute inset-x-0 top-full min-h-[calc(100vh-57px)] border-t border-white/60 bg-white/75 p-4 shadow-popover backdrop-blur-xl">
               <div className="mb-4 rounded-2xl border border-white/80 bg-white/60 p-4">
-                <p className="text-sm font-bold text-navy-900">Host workspace</p>
-                <p className="mt-1 text-xs text-ink-500">Manage your stays and bookings.</p>
+                <p className="text-sm font-bold text-navy-900">{workspaceName}</p>
+                <p className="mt-1 text-xs text-ink-500">{isSuperAdmin ? "Manage the platform and review activity." : "Manage your stays and bookings."}</p>
               </div>
-              {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+              {navItems.map(({ to, label, icon: Icon }) => (
                 <NavLink key={to} to={to} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold ${isActive ? "bg-accent text-navy-900" : "text-ink-700 hover:bg-brand-light"}`}>
                   <Icon className="h-4 w-4" aria-hidden="true" /> {label}
                 </NavLink>

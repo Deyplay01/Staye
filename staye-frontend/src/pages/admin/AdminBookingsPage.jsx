@@ -21,19 +21,23 @@ export default function AdminBookingsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    load(filters);
+    const controller = new AbortController();
+    load(filters, { signal: controller.signal });
+    return () => controller.abort();
   }, []);
 
-  async function load(params = filters) {
+  async function load(params = filters, config = {}) {
     setIsLoading(true);
     setError("");
     try {
-      const data = await fetchAdminBookings(params);
+      const data = await fetchAdminBookings(params, config);
       setBookings(data.bookings || []);
     } catch (err) {
-      setError(err?.response?.data?.message || "Couldn't load bookings.");
+      if (err.name !== "CanceledError") {
+        setError(err?.response?.data?.message || "Couldn't load bookings.");
+      }
     } finally {
-      setIsLoading(false);
+      if (!config.signal?.aborted) setIsLoading(false);
     }
   }
 
@@ -55,7 +59,7 @@ export default function AdminBookingsPage() {
 
   return (
     <AdminLayout>
-      <h1 className="mb-6 text-2xl font-extrabold text-ink-900">Bookings</h1>
+      <h1 className="mb-6 text-2xl font-bold text-ink-900">Bookings</h1>
 
       <div className="mb-5 rounded-2xl border border-ink-300 bg-white p-4 shadow-card sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -91,7 +95,7 @@ export default function AdminBookingsPage() {
                   <div>
                     <p className="font-semibold text-ink-900">{listing.title || "Listing"}</p>
                     <p className="text-sm text-ink-500">{guest.name || guest.email || "Guest"} · {listing.location || ""}</p>
-                    <p className="mt-1 text-sm text-ink-700">{formatDateLong(booking.checkIn)} → {formatDateLong(booking.checkOut)} · {booking.rooms} room{booking.rooms !== 1 ? "s" : ""}</p>
+                    <p className="mt-1 text-sm text-ink-700">{booking.roomId?.name || "Room"} · {formatDateLong(booking.checkIn)} → {formatDateLong(booking.checkOut)} · {booking.rooms} room{booking.rooms !== 1 ? "s" : ""}</p>
                   </div>
                   <div className="text-right">
                     <Badge status={booking.status === "confirmed" ? "Confirmed" : booking.status === "cancelled" ? "Cancelled" : "Pending"}>{STATUS_LABELS[booking.status] || booking.status}</Badge>

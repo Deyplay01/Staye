@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { loginUser, registerUser, clearSession } from "../api/auth";
+import { loginUser, registerUser, registerHost as registerHostRequest, clearSession, loginwithGoogle, loginHostWithGoogle, registerHostWithGoogle } from "../api/auth";
 
 const AuthContext = createContext(null);
 
@@ -19,7 +19,11 @@ export function AuthProvider({ children }) {
 
     if (token && userRaw) {
       try {
-        setUser(JSON.parse(userRaw));
+        const cachedUser = JSON.parse(userRaw);
+        setUser({
+          ...cachedUser,
+          role: cachedUser.role || (cachedUser.isAdmin ? "host" : "guest"),
+        });
         const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
         if (payload.exp) {
           const millisecondsUntilExpiry = payload.exp * 1000 - Date.now();
@@ -55,10 +59,34 @@ export function AuthProvider({ children }) {
     return profile;
   }
 
+   // 2. ADD THIS NEW GOOGLE LOGIN HANDLER HERE
+  async function loginGoogle(googleToken) {
+    const { token, user: profile } = await loginwithGoogle(googleToken);
+    persistSession(token, profile);
+    return profile;
+  }
+
+  async function loginHostGoogle(googleToken) {
+    const { token, user: profile } = await loginHostWithGoogle(googleToken);
+    persistSession(token, profile);
+    return profile;
+  }
+
+  async function registerHostGoogle(googleToken) {
+    const { token, user: profile } = await registerHostWithGoogle(googleToken);
+    persistSession(token, profile);
+    return profile;
+  }
+
+  async function registerHost(name, email, password) {
+    const { token, user: profile } = await registerHostRequest({ name, email, password });
+    persistSession(token, profile);
+    return profile;
+  }
+
   async function register(name, email, password) {
     const { token, user: profile } = await registerUser({ name, email, password });
-    // The register endpoint doesn't return isAdmin — new accounts are never admins anyway.
-    persistSession(token, { ...profile, isAdmin: false });
+    persistSession(token, { ...profile, role: profile.role || "guest" });
     return profile;
   }
 
@@ -72,11 +100,17 @@ export function AuthProvider({ children }) {
       value={{
         user,
         isAuthenticated: !!user,
-        isAdmin: !!user?.isAdmin,
+        role: user?.role || "guest",
+        isHost: user?.role === "host" || user?.role === "admin" || (!user?.role && !!user?.isAdmin),
+        isSuperAdmin: user?.role === "admin",
         isLoading,
         login,
         register,
         logout,
+        loginGoogle,
+        loginHostGoogle,
+        registerHostGoogle,
+        registerHost,
       }}
     >
       {children}

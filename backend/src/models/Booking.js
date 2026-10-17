@@ -1,9 +1,23 @@
 const mongoose = require("mongoose");
+const { createBookingReference } = require("../utils/bookingReference");
 
 const bookingSchema = new mongoose.Schema({
+    publicReference: {
+        type: String,
+        unique: true,
+        sparse: true,
+        default: createBookingReference,
+        immutable: true,
+        index: true,
+    },
     listingId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Listing",
+        required: true,
+    },
+    roomId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Room",
         required: true,
     },
     userId: {

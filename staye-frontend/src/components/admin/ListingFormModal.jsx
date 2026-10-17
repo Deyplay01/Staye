@@ -1,32 +1,61 @@
 import React, { useState } from "react";
-import { ImagePlus, Trash2, X } from "lucide-react";
+import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 import Button from "../common/Button";
 import { uploadImages } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
-const EMPTY_FORM = {
-  title: "",
+const EMPTY_ROOM = {
+  name: "",
   description: "",
   price: "",
   totalRooms: 1,
-  location: "",
   images: [],
   amenitiesText: "",
 };
 
-// The real backend stores images/amenities as string arrays. To keep the
-// form dead simple, we edit them as plain text (one image URL per line,
-// amenities comma-separated) and split into arrays on submit.
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  location: "",
+  images: [],
+  amenitiesText: "",
+  rooms: [EMPTY_ROOM],
+};
+
+function formatRoomPayload(room) {
+  return {
+    name: String(room.name || "").trim(),
+    description: String(room.description || "").trim(),
+    price: Number(room.price),
+    totalRooms: Number(room.totalRooms || 1),
+    images: Array.isArray(room.images) ? room.images : [],
+    amenities: String(room.amenitiesText || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  };
+}
+
 function listingToForm(listing) {
   if (!listing) return EMPTY_FORM;
+  const rooms = Array.isArray(listing.rooms) && listing.rooms.length
+    ? listing.rooms.map((room) => ({
+        name: room.name || "",
+        description: room.description || "",
+        price: room.price ?? "",
+        totalRooms: room.totalRooms ?? 1,
+        images: room.images || [],
+        amenitiesText: (room.amenities || []).join(", "),
+      }))
+    : [EMPTY_ROOM];
+
   return {
     title: listing.title || "",
     description: listing.description || "",
-    price: listing.price ?? "",
-    totalRooms: listing.totalRooms ?? 1,
     location: listing.location || "",
     images: listing.images || [],
     amenitiesText: (listing.amenities || []).join(", "),
+    rooms,
   };
 }
 
@@ -37,20 +66,38 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
   const [uploadError, setUploadError] = useState("");
   const isEditing = Boolean(initialListing);
 
-  function update(field, value) {
+  function updateListingField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function updateRoomField(roomIndex, field, value) {
+    setForm((prev) => ({
+      ...prev,
+      rooms: prev.rooms.map((room, index) => (index === roomIndex ? { ...room, [field]: value } : room)),
+    }));
+  }
+
+  function addRoom() {
+    setForm((prev) => ({ ...prev, rooms: [...prev.rooms, { ...EMPTY_ROOM }] }));
+  }
+
+  function removeRoom(index) {
+    setForm((prev) => ({
+      ...prev,
+      rooms: prev.rooms.length > 1 ? prev.rooms.filter((_, roomIndex) => roomIndex !== index) : [EMPTY_ROOM],
+    }));
   }
 
   function handleSubmit(e) {
     e.preventDefault();
+    const rooms = form.rooms.map(formatRoomPayload);
     onSave({
       title: form.title,
       description: form.description,
-      price: Number(form.price),
-      totalRooms: Number(form.totalRooms),
       location: form.location,
       images: form.images,
       amenities: form.amenitiesText.split(",").map((s) => s.trim()).filter(Boolean),
+      rooms,
     });
   }
 
@@ -81,7 +128,7 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-sm bg-white p-6 shadow-popover">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-sm bg-white p-6 shadow-popover">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-ink-900">{isEditing ? "Edit listing" : "Add a new listing"}</h2>
           <button onClick={onClose} aria-label="Close">
@@ -89,13 +136,13 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-ink-700">Title</span>
             <input
               required
               value={form.title}
-              onChange={(e) => update("title", e.target.value)}
+              onChange={(e) => updateListingField("title", e.target.value)}
               className="w-full rounded-sm border border-ink-300 px-3 py-2 text-sm"
             />
           </label>
@@ -106,46 +153,21 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
               required
               rows={3}
               value={form.description}
-              onChange={(e) => update("description", e.target.value)}
+              onChange={(e) => updateListingField("description", e.target.value)}
               className="w-full rounded-sm border border-ink-300 px-3 py-2 text-sm"
             />
           </label>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">Price per night (NGN)</span>
-              <input
-                required
-                type="number"
-                min="0"
-                value={form.price}
-                onChange={(e) => update("price", e.target.value)}
-                className="w-full rounded-sm border border-ink-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">Location</span>
-              <input
-                required
-                value={form.location}
-                onChange={(e) => update("location", e.target.value)}
-                placeholder="e.g. Lagos, Nigeria"
-                className="w-full rounded-sm border border-ink-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">Available rooms</span>
-              <input
-                required
-                type="number"
-                min="1"
-                step="1"
-                value={form.totalRooms}
-                onChange={(e) => update("totalRooms", e.target.value)}
-                className="w-full rounded-sm border border-ink-300 px-3 py-2 text-sm"
-              />
-            </label>
-          </div>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-ink-700">Location</span>
+            <input
+              required
+              value={form.location}
+              onChange={(e) => updateListingField("location", e.target.value)}
+              placeholder="e.g. Lagos, Nigeria"
+              className="w-full rounded-sm border border-ink-300 px-3 py-2 text-sm"
+            />
+          </label>
 
           <div className="block">
             <span className="mb-1 block text-sm font-medium text-ink-700">
@@ -189,16 +211,90 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
             </span>
             <input
               value={form.amenitiesText}
-              onChange={(e) => update("amenitiesText", e.target.value)}
+              onChange={(e) => updateListingField("amenitiesText", e.target.value)}
               placeholder="Free WiFi, Breakfast included, Sea view"
               className="w-full rounded-sm border border-ink-300 px-3 py-2 text-sm"
             />
           </label>
 
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-ink-900">Room categories</h3>
+              <Button type="button" variant="outline" size="sm" onClick={addRoom}>
+                <Plus className="h-4 w-4" aria-hidden="true" /> Add room
+              </Button>
+            </div>
+
+            {form.rooms.map((room, index) => (
+              <div key={`${room.name || "new-room"}-${index}`} className="rounded-xl border border-ink-300 bg-gray-50 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="font-semibold text-ink-900">Room {index + 1}</p>
+                  {form.rooms.length > 1 && (
+                    <button type="button" onClick={() => removeRoom(index)} className="text-xs font-semibold text-danger hover:underline">
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-medium text-ink-700">Room name</span>
+                    <input
+                      required
+                      value={room.name}
+                      onChange={(e) => updateRoomField(index, "name", e.target.value)}
+                      placeholder="Classic, Deluxe, Suite"
+                      className="w-full rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-ink-700">Price per night</span>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      value={room.price}
+                      onChange={(e) => updateRoomField(index, "price", e.target.value)}
+                      className="w-full rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-ink-700">Units available</span>
+                    <input
+                      required
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={room.totalRooms}
+                      onChange={(e) => updateRoomField(index, "totalRooms", e.target.value)}
+                      className="w-full rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-medium text-ink-700">Room description</span>
+                    <textarea
+                      rows={2}
+                      value={room.description}
+                      onChange={(e) => updateRoomField(index, "description", e.target.value)}
+                      className="w-full rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-medium text-ink-700">Amenities (comma-separated)</span>
+                    <input
+                      value={room.amenitiesText}
+                      onChange={(e) => updateRoomField(index, "amenitiesText", e.target.value)}
+                      placeholder="King bed, breakfast, balcony"
+                      className="w-full rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="flex justify-end gap-3 border-t border-ink-300 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit">{isEditing ? "Save changes" : "Add listing"}</Button>
           </div>
         </form>

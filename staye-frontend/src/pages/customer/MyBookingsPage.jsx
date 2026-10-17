@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -9,7 +9,7 @@ import Button from "../../components/common/Button";
 import { fetchMyBookings, cancelBooking } from "../../api/bookings";
 import { formatDateLong } from "../../utils/date";
 import { formatPrice } from "../../utils/price";
-import { Filter, Search, RotateCcw } from "lucide-react";
+import { Eye, FileText, Filter, Search, RotateCcw } from "lucide-react";
 
 // The real Booking schema only has these three statuses — no "Completed".
 const STATUS_BADGE = {
@@ -19,6 +19,8 @@ const STATUS_BADGE = {
 };
 
 export default function MyBookingsPage() {
+  const [searchParams] = useSearchParams();
+  const listingFilter = searchParams.get("listingId") || "";
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,8 +67,11 @@ export default function MyBookingsPage() {
   const visibleBookings = [...bookings]
     .filter((booking) => {
       const listing = typeof booking.listingId === "object" ? booking.listingId : null;
-      const searchableText = `${listing?.title || ""} ${listing?.location || ""}`.toLowerCase();
-      return (!filters.search || searchableText.includes(filters.search.toLowerCase()))
+      const room = typeof booking.roomId === "object" ? booking.roomId : null;
+      const bookingListingId = typeof booking.listingId === "object" ? booking.listingId?._id : booking.listingId;
+      const searchableText = `${listing?.title || ""} ${listing?.location || ""} ${room?.name || ""}`.toLowerCase();
+      return (!listingFilter || bookingListingId === listingFilter)
+        && (!filters.search || searchableText.includes(filters.search.toLowerCase()))
         && (!filters.status || booking.status === filters.status)
         && (!filters.paymentStatus || booking.paymentStatus === filters.paymentStatus)
         && (!filters.fromDate || booking.checkIn?.slice(0, 10) >= filters.fromDate)
@@ -83,7 +88,10 @@ export default function MyBookingsPage() {
       <Navbar />
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-extrabold text-ink-900">My bookings</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-ink-900">My bookings</h1>
+            {listingFilter && <p className="mt-1 text-sm text-ink-500">Showing bookings for the selected listing. <Link to="/my-bookings" className="font-semibold text-brand hover:text-brand-hover">Show all bookings</Link></p>}
+          </div>
           <Link to="/">
             <Button variant="outline" size="sm">Back to home</Button>
           </Link>
@@ -148,7 +156,7 @@ export default function MyBookingsPage() {
                       <p className="font-semibold text-ink-900">{listing?.title || "Listing"}</p>
                       <p className="text-sm text-ink-500">{listing?.location}</p>
                       <p className="mt-1 text-sm text-ink-700">
-                        {formatDateLong(booking.checkIn)} → {formatDateLong(booking.checkOut)}
+                        {booking.roomId?.name || "Room"} · {formatDateLong(booking.checkIn)} → {formatDateLong(booking.checkOut)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -159,6 +167,17 @@ export default function MyBookingsPage() {
                         <p className="mt-2 font-bold text-ink-900">{formatPrice(booking.totalAmount)}</p>
                       )}
                     </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-ink-300 pt-3">
+                    <Link to={`/confirmation/${booking._id}`}>
+                      <Button size="sm" variant="outline"><Eye className="h-4 w-4" aria-hidden="true" /> View booking</Button>
+                    </Link>
+                    {booking.paymentStatus === "paid" && (
+                      <Link to={`/receipt/${booking._id}`}>
+                        <Button size="sm"><FileText className="h-4 w-4" aria-hidden="true" /> View receipt</Button>
+                      </Link>
+                    )}
                   </div>
 
                   {booking.status !== "cancelled" && (

@@ -14,7 +14,20 @@ async function getApiError(response, fallbackMessage) {
 }
 
 export function getImageUrl(imageUrl) {
-  if (!imageUrl || imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+  if (!imageUrl) {
+    return imageUrl;
+  }
+
+  try {
+    const parsedUrl = new URL(imageUrl);
+    if (parsedUrl.pathname.startsWith("/uploads/")) {
+      return `${API_BASE_URL}${parsedUrl.pathname}`;
+    }
+  } catch {
+    // Relative paths and external image URLs are handled below.
+  }
+
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
   }
   return `${API_BASE_URL}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staye Hotel Booking System Presentation</title>
+    <style>
+      :root {
+        --bg: #f5f8f2;
+        --panel: #ffffff;
+        --forest: #243119;
+        --leaf: #96be8c;
+        --sage: #629460;
+        --mint: #c9f2c7;
+        --accent: #aceca1;
+        --ink: #243119;
+        --muted: #46633a;
+        --line: #dfe9dc;
+        --shadow: 0 18px 46px rgba(36, 49, 25, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        font-family: "DM Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f8f2 0%, #eef5ee 100%);
+        color: var(--forest);
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 36px;
+      }
+
+      .deck {
+        width: min(1200px, 100%);
+        height: min(760px, 82vh);
+        background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(245,248,242,0.96));
+        border-radius: 28px;
+        box-shadow: 0 24px 60px rgba(36, 49, 25, 0.12), 0 8px 22px rgba(36, 49, 25, 0.08);
+        border: 1px solid rgba(255,255,255,0.8);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slide {
+        display: none;
+        width: 100%;
+        height: 100%;
+        padding: 64px 72px 90px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+
+      .slide.active {
+        display: block;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 28px;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        color: var(--forest);
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: inline-block;
+      }
+
+      h1, h2, h3, p, ul, ol { margin-top: 0; }
+
+      h1 {
+        font-size: clamp(2.7rem, 3vw, 4.2rem);
+        line-height: 1.04;
+        margin-bottom: 16px;
+        letter-spacing: -0.05em;
+        font-weight: 700;
+      }
+
+      h2 {
+        font-size: clamp(2rem, 2vw, 2.8rem);
+        margin-bottom: 18px;
+        letter-spacing: -0.04em;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        color: var(--forest);
+        font-weight: 700;
+      }
+
+      p, li {
+        font-size: 1.08rem;
+        line-height: 1.7;
+        color: var(--ink);
+      }
+
+      .subtitle {
+        font-size: 1.2rem;
+        color: var(--muted);
+        max-width: 700px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.4fr 0.8fr;
+        gap: 32px;
+        height: calc(100% - 120px);
+        align-items: center;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(201, 242, 199, 0.7);
+        border: 1px solid rgba(98, 148, 96, 0.24);
+        color: var(--forest);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hero-card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(236,243,235,0.95));
+        border: 1px solid rgba(98, 148, 96, 0.16);
+        border-radius: 24px;
+        padding: 26px;
+        box-shadow: 0 18px 38px rgba(36, 49, 25, 0.06);
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(130px, 1fr));
+        gap: 18px;
+        margin-top: 28px;
+      }
+
+      .metric {
+        padding: 18px 20px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(245,248,242,0.9));
+        border: 1px solid rgba(98, 148, 96, 0.16);
+        box-shadow: 0 8px 18px rgba(36, 49, 25, 0.04);
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 1.8rem;
+        color: var(--forest);
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 28px;
+      }
+
+      .panel {
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,248,242,0.9));
+        border: 1px solid rgba(98, 148, 96, 0.14);
+        border-radius: 22px;
+        padding: 26px 24px;
+        box-shadow: 0 12px 28px rgba(36, 49, 25, 0.04);
+      }
+
+      .feature-list, .stack-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .feature-list li, .stack-list li {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .feature-list li:last-child, .stack-list li:last-child {
+        border-bottom: none;
+      }
+
+      .bullet {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        margin-top: 8px;
+        flex-shrink: 0;
+      }
+
+      .architecture-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+        gap: 18px;
+        margin-top: 12px;
+      }
+
+      .arch-box {
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(238,244,235,0.96));
+        border: 1px solid rgba(98, 148, 96, 0.14);
+        border-radius: 20px;
+        padding: 22px 18px;
+        box-shadow: 0 10px 20px rgba(36, 49, 25, 0.03);
+      }
+
+      .arch-box h3 {
+        margin-bottom: 8px;
+      }
+
+      .small {
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      .route-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(240px, 1fr));
+        gap: 14px 18px;
+      }
+
+      .route-item {
+        padding: 12px 14px;
+        border: 1px solid rgba(98, 148, 96, 0.15);
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(245,248,242,0.92));
+        font-family: "Consolas", Monaco, monospace;
+        font-size: 0.9rem;
+        color: var(--forest);
+        box-shadow: 0 8px 18px rgba(36, 49, 25, 0.03);
+      }
+
+      .callout {
+        background: linear-gradient(135deg, rgba(36,49,25,0.96), rgba(98,148,96,0.92));
+        color: white;
+        border-radius: 22px;
+        padding: 26px 28px;
+      }
+
+      .callout p,
+      .callout li,
+      .callout h3 {
+        color: white;
+      }
+
+      .nav {
+        position: absolute;
+        bottom: 20px;
+        right: 30px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .nav button {
+        background: linear-gradient(180deg, var(--forest), var(--sage));
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        width: 42px;
+        height: 42px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: 0.2s ease;
+        box-shadow: 0 8px 18px rgba(36, 49, 25, 0.15);
+      }
+
+      .nav button:hover {
+        background: linear-gradient(180deg, var(--sage), var(--forest));
+      }
+
+      .counter {
+        position: absolute;
+        bottom: 26px;
+        left: 72px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 900px) {
+        .deck { height: auto; min-height: 90vh; }
+        .slide { padding: 34px 24px 72px; }
+        .hero, .two-col, .architecture-grid, .route-list { grid-template-columns: 1fr; }
+        .metrics { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck">
+      <section class="slide active">
+        <div class="topbar">
+          <div class="logo"><span class="dot"></span> STAYE</div>
+          <div>Hotel booking platform</div>
+        </div>
+
+        <div class="hero">
+          <div>
+            <div class="tag">Project overview</div>
+            <h1>Staye</h1>
+            <p class="subtitle">
+              A modern hotel booking and listing platform designed for guests and property admins,
+              combining browsing, secure booking, and host management in one system.
+            </p>
+            <div class="metrics">
+              <div class="metric">
+                <strong>2</strong>
+                <span>user roles</span>
+              </div>
+              <div class="metric">
+                <strong>8+</strong>
+                <span>core screens</span>
+              </div>
+              <div class="metric">
+                <strong>Full</strong>
+                <span>stack app</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <h3>System purpose</h3>
+            <p>
+              Guests can discover stays, choose room categories, reserve rooms, pay securely,
+              receive notifications, and save receipts, while administrators manage listings,
+              room inventory, client bookings, verification, and revenue.
+            </p>
+            <p class="small">
+              Built with React + Vite on the frontend and Express + MongoDB on the backend,
+              with Paystack payments and protected role-based workflows.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topbar">
+          <div class="logo"><span class="dot"></span> KEY FEATURES</div>
+          <div>Guest experience</div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <h2>Customer journey</h2>
+            <ul class="feature-list">
+              <li><span class="bullet"></span><div><strong>Search & discovery</strong><br />Users browse listings by location, room category, price, amenities, and popular destinations.</div></li>
+              <li><span class="bullet"></span><div><strong>Room-aware booking</strong><br />Guests choose Classic, Deluxe, Suite, or other room categories with independent pricing and availability.</div></li>
+              <li><span class="bullet"></span><div><strong>Payments & receipts</strong><br />Paystack handles payment flow, while paid bookings expose a printable receipt with a public booking reference.</div></li>
+              <li><span class="bullet"></span><div><strong>Notifications</strong><br />Users receive booking, payment, cancellation, and refund updates through an in-app notification center and popup alerts.</div></li>
+              <li><span class="bullet"></span><div><strong>Secure booking</strong><br />Guests reserve rooms only through authenticated flows, reducing unauthorized access.</div></li>
+              <li><span class="bullet"></span><div><strong>Booking history</strong><br />Users can track their reservations, status, and trip details from a personal dashboard.</div></li>
+              <li><span class="bullet"></span><div><strong>Profile management</strong><br />Customers manage account settings and personal details within the application.</div></li>
+            </ul>
+          </div>
+
+          <div class="panel">
+            <h2>Admin workflow</h2>
+            <ul class="feature-list">
+              <li><span class="bullet"></span><div><strong>Listing management</strong><br />Admins create, update, and monitor property listings and room availability.</div></li>
+              <li><span class="bullet"></span><div><strong>Room inventory</strong><br />Hosts manage room categories, descriptions, amenities, prices, and available units separately from listing details.</div></li>
+              <li><span class="bullet"></span><div><strong>Booking oversight</strong><br />The admin dashboard consolidates bookings, occupancy, and payment activity.</div></li>
+              <li><span class="bullet"></span><div><strong>Booking verification</strong><br />Admins verify public STY booking references against their own listings and payment state.</div></li>
+              <li><span class="bullet"></span><div><strong>Host notifications</strong><br />Admins receive alerts for new bookings, payments, failed payments, cancellations, and refunds.</div></li>
+              <li><span class="bullet"></span><div><strong>Revenue analytics</strong><br />The platform reports revenue by currency and tracks booked rooms.</div></li>
+              <li><span class="bullet"></span><div><strong>Protected access</strong><br />Administrative routes are separated behind dedicated authentication rules.</div></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topbar">
+          <div class="logo"><span class="dot"></span> ARCHITECTURE</div>
+          <div>System design</div>
+        </div>
+
+        <div class="architecture-grid">
+          <div class="arch-box">
+            <h3>Frontend</h3>
+            <p class="small">React + Vite + Tailwind CSS<br />Single-page application with route-based pages</p>
+          </div>
+          <div class="arch-box">
+            <h3>Backend</h3>
+            <p class="small">Express.js API with REST endpoints for auth, listings, bookings, and payments</p>
+          </div>
+          <div class="arch-box">
+            <h3>Database</h3>
+            <p class="small">MongoDB using Mongoose models for users, listings, bookings, and profiles</p>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-top:24px;">
+          <div class="panel">
+            <h3>Core services</h3>
+            <ul class="stack-list">
+              <li><span class="bullet"></span><div>Authentication and authorization with JWT-based user protection.</div></li>
+              <li><span class="bullet"></span><div>Listing pages, filters, and room data retrieval from the backend API.</div></li>
+              <li><span class="bullet"></span><div>Room-aware availability, booking transactions, Paystack verification, and payment webhooks.</div></li>
+              <li><span class="bullet"></span><div>In-app notification persistence with unread counts, popup alerts, and role-specific destinations.</div></li>
+            </ul>
+          </div>
+
+          <div class="panel">
+            <h3>Environment setup</h3>
+            <ul class="stack-list">
+              <li><span class="bullet"></span><div>Frontend connects through configured API base URLs and CORS rules.</div></li>
+              <li><span class="bullet"></span><div>Server enforces required environment variables such as MongoDB URI and JWT secret.</div></li>
+              <li><span class="bullet"></span><div>Uploaded media is served from the backend uploads directory.</div></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topbar">
+          <div class="logo"><span class="dot"></span> USER FLOWS</div>
+          <div>Navigation model</div>
+        </div>
+
+        <div class="route-list">
+          <div class="route-item">/ → Home page</div>
+          <div class="route-item">/listings → Browse stays</div>
+          <div class="route-item">/listings/:id → Listing details</div>
+          <div class="route-item">/booking/:listingId → Reserve room</div>
+          <div class="route-item">/confirmation/:bookingId → Booking confirmation</div>
+          <div class="route-item">/receipt/:bookingId → Paid booking receipt</div>
+          <div class="route-item">/my-bookings → Reservation dashboard</div>
+          <div class="route-item">/dashboard → Customer dashboard</div>
+          <div class="route-item">/notifications → Customer notifications</div>
+          <div class="route-item">/profile → Account info</div>
+          <div class="route-item">/login & /register → Guest authentication</div>
+          <div class="route-item">/admin/login → Admin access</div>
+          <div class="route-item">/admin/dashboard → Operations overview</div>
+          <div class="route-item">/admin/listings → Manage listings</div>
+          <div class="route-item">/admin/bookings → Review bookings</div>
+          <div class="route-item">/admin/verify-booking → Verify public reference</div>
+          <div class="route-item">/admin/notifications → Host notifications</div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topbar">
+          <div class="logo"><span class="dot"></span> TECHNOLOGY STACK</div>
+          <div>Implementation details</div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <h3>Frontend stack</h3>
+            <ul class="stack-list">
+              <li><span class="bullet"></span><div>React 18 for component-driven UI development</div></li>
+              <li><span class="bullet"></span><div>Vite for fast development and build performance</div></li>
+              <li><span class="bullet"></span><div>Tailwind CSS for styling and layout consistency</div></li>
+              <li><span class="bullet"></span><div>React Router for page navigation and route protection</div></li>
+            </ul>
+          </div>
+
+          <div class="panel">
+            <h3>Backend stack</h3>
+            <ul class="stack-list">
+              <li><span class="bullet"></span><div>Node.js + Express for API routing and middleware</div></li>
+              <li><span class="bullet"></span><div>MongoDB + Mongoose for users, listings, room categories, bookings, notifications, and profiles</div></li>
+              <li><span class="bullet"></span><div>JWT for authentication and admin access control</div></li>
+              <li><span class="bullet"></span><div>Multer and upload routes for property media handling</div></li>
+              <li><span class="bullet"></span><div>Paystack API and signed webhooks for payment initialization, verification, and refunds</div></li>
+              <li><span class="bullet"></span><div>Helmet and express-rate-limit for HTTP hardening and abuse protection</div></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topbar">
+          <div class="logo"><span class="dot"></span> DATA MODEL</div>
+          <div>Persistence layer</div>
+        </div>
+
+        <div class="callout">
+          <h3>Key domain models</h3>
+          <ul>
+            <li><strong>User:</strong> authentication, roles, account metadata</li>
+            <li><strong>Listing:</strong> title, location, property details, images, and amenities</li>
+            <li><strong>Room:</strong> room category, description, price, amenities, images, and inventory</li>
+            <li><strong>Booking:</strong> reservation lifecycle, selected room, public reference, and payment status</li>
+            <li><strong>Notification:</strong> user-owned booking and payment activity with read state</li>
+            <li><strong>Profile:</strong> extended personal information for customer accounts</li>
+          </ul>
+          <p>
+            This structure supports a realistic accommodation marketplace where guests reserve stays and hosts manage inventory and revenue.
+          </p>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topbar">
+          <div class="logo"><span class="dot"></span> CONCLUSION</div>
+          <div>Project value</div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <h2>Why this project matters</h2>
+            <p>
+              Staye demonstrates a practical end-to-end software solution for the hospitality industry, covering
+              both customer-facing experiences and operational admin responsibilities.
+            </p>
+            <p>
+              It shows how a modern web application can combine product discovery, room-level inventory,
+              transactional flows, security controls, notifications, and business intelligence in a single platform.
+            </p>
+          </div>
+
+          <div class="panel">
+            <h3>Potential next steps</h3>
+            <ul class="feature-list">
+              <li><span class="bullet"></span><div>Add schema validation with Zod or Joi and automated API tests.</div></li>
+              <li><span class="bullet"></span><div>Strengthen high-concurrency inventory reservations and booking holds.</div></li>
+              <li><span class="bullet"></span><div>Add audit logs, HTTPS enforcement, and secure httpOnly cookie sessions.</div></li>
+              <li><span class="bullet"></span><div>Expand analytics with bookings by month and top-performing locations.</div></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <div class="counter" id="counter">01 / 08</div>
+      <div class="nav">
+        <button type="button" id="prev" aria-label="Previous slide">←</button>
+        <button type="button" id="next" aria-label="Next slide">→</button>
+      </div>
+    </div>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const counter = document.getElementById('counter');
+      const prevBtn = document.getElementById('prev');
+      const nextBtn = document.getElementById('next');
+      let current = 0;
+
+      function renderSlide() {
+        slides.forEach((slide, index) => slide.classList.toggle('active', index === current));
+        counter.textContent = `${String(current + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+      }
+
+      prevBtn.addEventListener('click', () => {
+        current = (current - 1 + slides.length) % slides.length;
+        renderSlide();
+      });
+
+      nextBtn.addEventListener('click', () => {
+        current = (current + 1) % slides.length;
+        renderSlide();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+          current = (current + 1) % slides.length;
+          renderSlide();
+        }
+        if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+          current = (current - 1 + slides.length) % slides.length;
+          renderSlide();
+        }
+      });
+
+      renderSlide();
+    </script>
+  </body>
+</html>

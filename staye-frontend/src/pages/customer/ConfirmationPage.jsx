@@ -120,7 +120,7 @@ export default function ConfirmationPage() {
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
         <div className="rounded-sm border border-ink-300 bg-white p-6 text-center shadow-card sm:p-8">
           <CheckCircle2 className="mx-auto h-14 w-14 text-success" aria-hidden="true" />
-          <h1 className="mt-4 text-2xl font-extrabold text-ink-900">Booking created!</h1>
+          <h1 className="mt-4 text-2xl font-bold text-ink-900">Booking created!</h1>
           <p className="mt-1 text-sm text-ink-500">
             Status: <span className="font-medium">{STATUS_LABEL[booking.status] || booking.status}</span>
           </p>
@@ -128,7 +128,7 @@ export default function ConfirmationPage() {
 
           <div className="mt-6 rounded-sm bg-brand-light p-4 text-left">
             <p className="text-xs uppercase tracking-wide text-ink-500">Booking ID</p>
-            <p className="text-lg font-extrabold tracking-wide text-navy-900">{booking._id}</p>
+            <p className="text-lg font-bold tracking-wide text-navy-900">{booking.publicReference || booking._id}</p>
           </div>
 
           <div className="mt-6 space-y-3 text-left text-sm">
@@ -137,7 +137,7 @@ export default function ConfirmationPage() {
               <div>
                 <p className="font-medium text-ink-900">{listing?.title || "Listing"}</p>
                 <p className="text-ink-500">
-                  {formatDateLong(booking.checkIn)} → {formatDateLong(booking.checkOut)} ·{" "}
+                  {booking.roomId?.name || "Room"} · {formatDateLong(booking.checkIn)} → {formatDateLong(booking.checkOut)} ·{" "}
                   {nights} night{nights !== 1 ? "s" : ""}
                 </p>
               </div>
@@ -164,6 +164,11 @@ export default function ConfirmationPage() {
               <Button variant="outline" onClick={handleRefund} disabled={isRefunding}>
                 {isRefunding ? "Refunding..." : "Request refund"}
               </Button>
+            )}
+            {booking.paymentStatus === "paid" && (
+              <Link to={`/receipt/${booking._id}`}>
+                <Button variant="outline">Save receipt</Button>
+              </Link>
             )}
             <Link to="/my-bookings">
               <Button variant={booking.paymentStatus === "paid" ? "primary" : "outline"}>View my bookings</Button>

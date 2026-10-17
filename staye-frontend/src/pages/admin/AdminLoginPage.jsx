@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 
 /**
  * Deliberately separate from the customer /login page. Calls the same
- * POST /auth/login endpoint (there's only one in the backend), but rejects
- * the session on the client if the account isn't isAdmin — a customer
- * account can log in here but will just be told this isn't an admin login.
+ * POST /auth/login endpoint, but rejects the session unless the account
+ * has a host or super-admin role.
  */
 export default function AdminLoginPage() {
-  const { login, logout } = useAuth();
+  const { login, logout, loginHostGoogle } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -25,14 +25,27 @@ export default function AdminLoginPage() {
     setIsSubmitting(true);
     try {
       const profile = await login(email, password);
-      if (!profile.isAdmin) {
+      if (!["host", "admin"].includes(profile.role)) {
         logout();
-        setError("This account doesn't have admin access.");
+        setError("This account doesn't have host access.");
         return;
       }
       navigate("/admin/dashboard");
     } catch (err) {
       setError(err?.response?.data?.message || "Login failed. Check your email and password.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleSuccess(response) {
+    setError("");
+    setIsSubmitting(true);
+    try {
+      await loginHostGoogle(response.credential);
+      navigate("/admin/dashboard");
+    } catch (err) {
+      setError(err?.response?.data?.message || "This Google account does not have host access.");
     } finally {
       setIsSubmitting(false);
     }
@@ -76,6 +89,15 @@ export default function AdminLoginPage() {
             {isSubmitting ? "Logging in..." : "Log in"}
           </Button>
         </form>
+
+        <div className="my-5 flex items-center gap-2">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs uppercase tracking-wider text-slate-400">or</span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
+        <div className="flex justify-center">
+          <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-in was cancelled.")} theme="outline" size="large" shape="rounded" width="240" />
+        </div>
 
         <p className="mt-4 text-center text-sm text-ink-500">
           Need a host account? <Link to="/admin/register" className="font-bold text-brand hover:underline">Register here</Link>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Filter, MapPin, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
@@ -15,20 +15,24 @@ const INITIAL_FILTERS = {
   priceMin: "",
   priceMax: "",
   amenities: "",
+  roomType: "",
   sortBy: "createdAt",
   order: "desc",
 };
 
 export default function ListingsPage() {
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [draft, setDraft] = useState(INITIAL_FILTERS);
+  const [searchParams] = useSearchParams();
+  const initialLocation = searchParams.get("location") || "";
+  const initialFilters = { ...INITIAL_FILTERS, location: initialLocation };
+  const [filters, setFilters] = useState(initialFilters);
+  const [draft, setDraft] = useState(initialFilters);
   const [listings, setListings] = useState([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    loadListings(INITIAL_FILTERS, 1);
+    loadListings(initialFilters, 1);
   }, []);
 
   async function loadListings(nextFilters, nextPage) {
@@ -40,6 +44,7 @@ export default function ListingsPage() {
       if (nextFilters.priceMin) params.priceMin = nextFilters.priceMin;
       if (nextFilters.priceMax) params.priceMax = nextFilters.priceMax;
       if (nextFilters.amenities) params.amenities = nextFilters.amenities;
+      if (nextFilters.roomType) params.roomType = nextFilters.roomType;
       const data = await fetchListings(params);
       setListings(data.listings || []);
       setPage(data.page || nextPage);
@@ -62,7 +67,7 @@ export default function ListingsPage() {
     loadListings(INITIAL_FILTERS, 1);
   }
 
-  const activeFilterCount = [filters.location, filters.priceMin, filters.priceMax, filters.amenities].filter(Boolean).length;
+  const activeFilterCount = [filters.location, filters.priceMin, filters.priceMax, filters.amenities, filters.roomType].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-[#f5f8f2]">
@@ -97,7 +102,7 @@ export default function ListingsPage() {
             </div>
             <div className="mb-5 flex items-center gap-2 rounded-xl bg-brand-light px-3 py-2 text-xs leading-5 text-ink-700">
               <SlidersHorizontal className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
-              Narrow your search by place, price, and amenities.
+              Narrow your search by place, room type, price, and amenities.
             </div>
             <form onSubmit={submitFilters} className="space-y-4">
               <label className="block">
@@ -114,6 +119,10 @@ export default function ListingsPage() {
                   <input type="number" min="0" value={draft.priceMax} onChange={(event) => setDraft({ ...draft, priceMax: event.target.value })} placeholder="Max" className="w-full rounded-full border border-ink-300 px-3 py-2.5 text-sm outline-none" />
                 </div>
               </div>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-ink-700">Room category</span>
+                <input value={draft.roomType} onChange={(event) => setDraft({ ...draft, roomType: event.target.value })} placeholder="Classic, Deluxe, Suite" className="w-full rounded-full border border-ink-300 px-3 py-2.5 text-sm outline-none focus:border-brand" />
+              </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-ink-700">Amenities</span>
                 <input value={draft.amenities} onChange={(event) => setDraft({ ...draft, amenities: event.target.value })} placeholder="WiFi, breakfast, pool" className="w-full rounded-full border border-ink-300 px-3 py-2.5 text-sm outline-none focus:border-brand" />
