@@ -18,9 +18,53 @@ const UserSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
     },
+    role: {
+      type: String,
+      enum: ["guest", "host", "admin"],
+      index: true,
+    },
     isAdmin: {
       type: Boolean,
+      default: undefined,
+    },
+    status: {
+      type: String,
+      enum: ["active", "blocked"],
+      default: "active",
+      index: true,
+    },
+    isFlagged: {
+      type: Boolean,
       default: false,
+      index: true,
+    },
+    flagReason: {
+      type: String,
+      default: "",
+      maxlength: 500,
+    },
+    flaggedAt: {
+      type: Date,
+      default: null,
+    },
+    flaggedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    blockedAt: {
+      type: Date,
+      default: null,
+    },
+    blockedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    blockReason: {
+      type: String,
+      default: "",
+      maxlength: 500,
     },
     password: {
       type: String,

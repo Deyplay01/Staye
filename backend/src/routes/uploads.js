@@ -1,13 +1,12 @@
 const crypto = require("crypto");
 const express = require("express");
-const fs = require("fs");
 const multer = require("multer");
 const path = require("path");
 const authMiddleware = require("../middleware/Authentication");
+const { requireRoles } = require("../utils/roles");
+const uploadDirectory = require("../utils/uploadDirectory");
 
 const router = express.Router();
-const uploadDirectory = path.join(__dirname, "../../uploads");
-fs.mkdirSync(uploadDirectory, { recursive: true });
 
 const storage = multer.diskStorage({
     destination: (_req, _file, callback) => callback(null, uploadDirectory),
@@ -28,7 +27,7 @@ const upload = multer({
     },
 });
 
-router.post("/images", authMiddleware, (req, res) => {
+router.post("/images", authMiddleware, requireRoles("host", "admin"), (req, res) => {
     upload.array("images", 10)(req, res, (error) => {
         if (error) {
             return res.status(400).json({ message: error.message });

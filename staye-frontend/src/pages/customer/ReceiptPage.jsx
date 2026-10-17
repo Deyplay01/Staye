@@ -23,6 +23,8 @@ export default function ReceiptPage() {
   const receiptRef = useRef(null);
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -42,7 +44,16 @@ export default function ReceiptPage() {
   const isPaid = booking.paymentStatus === "paid";
 
   async function handleDownloadReceipt() {
-    await downloadReceiptAsPdf(receiptRef.current, `staye-receipt-${booking.publicReference || booking._id}.pdf`);
+    setIsDownloading(true);
+    setDownloadError("");
+    try {
+      await downloadReceiptAsPdf(receiptRef.current, `staye-receipt-${booking.publicReference || booking._id}.pdf`);
+    } catch (downloadFailure) {
+      console.error("Unable to generate receipt PDF:", downloadFailure);
+      setDownloadError("The PDF could not be generated. Please try again or use Print / save PDF.");
+    } finally {
+      setIsDownloading(false);
+    }
   }
 
   return (
@@ -51,8 +62,9 @@ export default function ReceiptPage() {
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-10">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <Link to="/my-bookings"><Button type="button" variant="outline" size="sm"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to bookings</Button></Link>
-          {isPaid && <div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4" aria-hidden="true" /> Print / save PDF</Button><Button type="button" size="sm" onClick={handleDownloadReceipt}><Download className="h-4 w-4" aria-hidden="true" /> Download receipt</Button></div>}
+          {isPaid && <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4" aria-hidden="true" /> Print / save PDF</Button><Button type="button" size="sm" disabled={isDownloading} onClick={handleDownloadReceipt}><Download className="h-4 w-4" aria-hidden="true" /> {isDownloading ? "Preparing PDF..." : "Download receipt"}</Button></div>}
         </div>
+        {downloadError && <p role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-danger print:hidden">{downloadError}</p>}
 
         <article ref={receiptRef} className="receipt-paper rounded-2xl border border-ink-300 bg-white p-6 shadow-card sm:p-10 print:rounded-none print:border-0 print:p-0 print:shadow-none">
           <header className="flex flex-wrap items-start justify-between gap-5 border-b border-ink-300 pb-6">

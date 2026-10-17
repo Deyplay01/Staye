@@ -19,18 +19,27 @@ const Booking = require("./src/models/Booking");
 const { createBookingReference } = require("./src/utils/bookingReference");
 const cors = require("cors");
 const path = require("path");
-const dns = require("dns");
+const uploadDirectory = require("./src/utils/uploadDirectory");
 
-dns.setServers(["8.8.8.8"]);
+if (process.env.NODE_ENV !== 'production') {
+  const dns = require('dns');
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+}
 
-const allowedOrigins = (process.env.FRONTEND_URL)
+const frontendOrigins = process.env.FRONTEND_URL
+    || (process.env.NODE_ENV === "production" ? "" : "http://localhost:5173");
+if (!frontendOrigins) {
+    throw new Error("FRONTEND_URL must be configured in production.");
+}
+const allowedOrigins = frontendOrigins
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
 const corsOptions = {
     origin: allowedOrigins,
-    methods: "GET,PUT,POST,PATCH,DELETE",
-    credentials: "true"
+    methods: ["GET", "HEAD", "PUT", "POST", "PATCH", "DELETE"],
+    credentials: true,
+    optionsSuccessStatus: 204,
 };
 
 if (process.env.NODE_ENV === "production") {
@@ -83,10 +92,25 @@ app.use(helmet({
 }));
 app.use(cors(corsOptions));
 app.use("/api", apiLimiter);
+app.get("/health/live", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+});
+app.get("/health/ready", (_req, res) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ status: "not_ready", database: "disconnected" });
+    }
+    res.status(200).json({ status: "ready", database: "connected" });
+});
 app.post("/api/payments/webhook", express.raw({ type: "application/json" }), paymentRoutes.handleWebhook);
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(uploadDirectory));
 app.use("/api/auth", authLimiter, authRoutes);
+app.use([
+    "/api/admin/register",
+    "/api/admin/login",
+    "/api/admin/google/login",
+    "/api/admin/google/register",
+], authLimiter);
 app.use("/api/admin", adminRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/listings", listingsRoutes);

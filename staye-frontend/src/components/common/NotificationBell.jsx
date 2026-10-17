@@ -19,10 +19,16 @@ export default function NotificationBell({ adminMode = false, align = "right" })
   const [toast, setToast] = useState(null);
   const knownNotificationIds = useRef(new Set());
   const hasLoadedNotifications = useRef(false);
+  const activeRequest = useRef(null);
 
   async function loadNotifications(showToast = false) {
+    if (activeRequest.current) return;
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    activeRequests.current.add(controller);
     try {
-      const data = await fetchNotifications(8);
+      const data = await fetchNotifications(8, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       const nextNotifications = data.notifications || [];
       if (showToast && hasLoadedNotifications.current) {
         const newNotification = nextNotifications.find((notification) => !knownNotificationIds.current.has(notification._id));
@@ -32,15 +38,26 @@ export default function NotificationBell({ adminMode = false, align = "right" })
       hasLoadedNotifications.current = true;
       setNotifications(nextNotifications);
       setUnreadCount(data.unreadCount || 0);
-    } catch {
-      setNotifications([]);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        console.error("Unable to load notifications:", error);
+        setNotifications([]);
+      }
+    } finally {
+      if (activeRequest.current === controller) {
+        activeRequest.current = null;
+      }
     }
   }
 
   useEffect(() => {
     loadNotifications();
     const interval = window.setInterval(() => loadNotifications(true), 60000);
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      activeRequest.current?.abort();
+      activeRequest.current = null;
+    };
   }, []);
 
   useEffect(() => {

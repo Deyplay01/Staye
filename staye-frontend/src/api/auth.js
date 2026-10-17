@@ -16,16 +16,13 @@ export async function loginwithGoogle(googleToken) {
   return data;
 }
 
-export async function loginAdminWithGoogle(googleToken) {
+export async function loginHostWithGoogle(googleToken) {
   const { data } = await apiClient.post("/admin/google/login", { credential: googleToken });
   return data;
 }
 
-export async function registerAdminWithGoogle(googleToken, registrationKey) {
-  const { data } = await apiClient.post("/admin/google/register", {
-    credential: googleToken,
-    registrationKey,
-  });
+export async function registerHostWithGoogle(googleToken) {
+  const { data } = await apiClient.post("/admin/google/register", { credential: googleToken });
   return data;
 }
 
@@ -34,23 +31,17 @@ export async function loginUser({ email, password }) {
   return data;
 }
 
-export async function registerAdmin({
-  name,
-  email,
-  password,
-  registrationKey,
-}) {
+export async function registerHost({ name, email, password }) {
   const { data } = await apiClient.post("/admin/register", {
     name,
     email,
     password,
-    registrationKey,
   });
   return data;
 }
 
-export async function fetchProfile() {
-  const { data } = await apiClient.get("/profile");
+export async function fetchProfile(config = {}) {
+  const { data } = await apiClient.get("/profile", config);
   return data.profile;
 }
 

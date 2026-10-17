@@ -5,6 +5,7 @@ const Listing = require("../models/Listings");
 const Room = require("../models/Room");
 const Booking = require("../models/Booking");
 const authMiddleware = require("../middleware/Authentication");
+const { requireRoles } = require("../utils/roles");
 
 function normalizeRoomPayloads(payload) {
     if (!Array.isArray(payload) || payload.length === 0) {
@@ -51,10 +52,16 @@ async function enrichListings(listings) {
         roomsByListing.get(key).push(room.toObject());
     }
 
-    return listings.map((listing) => ({
-        ...listing.toObject(),
-        rooms: roomsByListing.get(listing._id.toString()) || [],
-    }));
+    return listings.map((listing) => {
+        const result = listing.toObject();
+        if (result.hostId && typeof result.hostId === "object") {
+            result.hostId = result.hostId._id;
+        }
+        return {
+            ...result,
+            rooms: roomsByListing.get(listing._id.toString()) || [],
+        };
+    });
 }
 
 router.get("/", async (req, res) => {
@@ -76,10 +83,13 @@ router.get("/", async (req, res) => {
             return res.status(400).json({ message: "Invalid price range." });
         }
 
-        const filter = {};
+        const filter = { status: "approved" };
         if (location) filter.location = { $regex: location, $options: "i" };
-        const listings = await Listing.find(filter).sort({ [sortBy]: order === "asc" ? 1 : -1 });
-        const enrichedListings = await enrichListings(listings);
+        const listings = await Listing.find(filter)
+            .populate({ path: "hostId", match: { status: { $ne: "blocked" } }, select: "_id" })
+            .sort({ [sortBy]: order === "asc" ? 1 : -1 });
+        const visibleListings = listings.filter((listing) => listing.hostId);
+        const enrichedListings = await enrichListings(visibleListings);
 
         const requestedAmenities = amenities
             ? String(amenities).split(",").map((item) => item.trim().toLowerCase()).filter(Boolean)
@@ -127,6 +137,10 @@ router.get("/popular-locations", async (_req, res) => {
             { $match: { status: "confirmed", paymentStatus: "paid" } },
             { $lookup: { from: "listings", localField: "listingId", foreignField: "_id", as: "listing" } },
             { $unwind: "$listing" },
+            { $match: { "listing.status": "approved" } },
+            { $lookup: { from: "users", localField: "listing.hostId", foreignField: "_id", as: "host" } },
+            { $unwind: "$host" },
+            { $match: { "host.status": { $ne: "blocked" } } },
             {
                 $group: {
                     _id: "$listing.location",
@@ -154,7 +168,8 @@ router.get("/popular-locations", async (_req, res) => {
             return res.json({ locations: popularLocations });
         }
 
-        const fallbackListings = await Listing.find({ location: { $exists: true, $ne: "" } })
+        const fallbackListings = await Listing.find({ status: "approved", location: { $exists: true, $ne: "" } })
+            .populate({ path: "hostId", match: { status: { $ne: "blocked" } }, select: "_id" })
             .select("title location images")
             .sort({ createdAt: -1 })
             .limit(30)
@@ -162,6 +177,7 @@ router.get("/popular-locations", async (_req, res) => {
         const fallbackLocations = [];
         const seenLocations = new Set();
         for (const listing of fallbackListings) {
+            if (!listing.hostId) continue;
             if (seenLocations.has(listing.location)) continue;
             seenLocations.add(listing.location);
             fallbackLocations.push({
@@ -182,8 +198,8 @@ router.get("/popular-locations", async (_req, res) => {
 
 router.get("/my-listings", authMiddleware, async (req, res) => {
     try {
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Access denied. Admins only." });
+        if (!["host", "admin"].includes(req.user.role)) {
+            return res.status(403).json({ message: "Access denied. Hosts only." });
         }
         const { location, sortBy = "createdAt", order = "desc" } = req.query;
         const allowedSortFields = ["createdAt", "updatedAt", "title"];
@@ -207,8 +223,9 @@ router.get("/:id", async (req, res) => {
         if (!mongoose.isValidObjectId(req.params.id)) {
             return res.status(400).json({ message: "Invalid listing ID." });
         }
-        const listing = await Listing.findById(req.params.id);
-        if (!listing) {
+        const listing = await Listing.findOne({ _id: req.params.id, status: "approved" })
+            .populate({ path: "hostId", match: { status: { $ne: "blocked" } }, select: "_id" });
+        if (!listing || !listing.hostId) {
             return res.status(404).json({ message: "Listing not found" });
         }
         const [enrichedListing] = await enrichListings([listing]);
@@ -219,12 +236,8 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", authMiddleware, requireRoles("host", "admin"), async (req, res) => {
     try {
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
-
         const { title, description, location, images, amenities, rooms } = req.body;
         if (!title || !description || !location) {
             return res.status(400).json({ message: "Title, description, and location are required." });
@@ -261,11 +274,8 @@ router.post("/", authMiddleware, async (req, res) => {
     }
 });
 
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", authMiddleware, requireRoles("host", "admin"), async (req, res) => {
     try {
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
         if (!mongoose.isValidObjectId(req.params.id)) {
             return res.status(400).json({ message: "Invalid listing ID." });
         }
@@ -275,16 +285,37 @@ router.put("/:id", authMiddleware, async (req, res) => {
             return res.status(400).json({ message: "Title, description, and location are required." });
         }
 
+        const normalizedRooms = normalizeRoomPayloads(rooms);
+        const currentListing = await Listing.findOne({ _id: req.params.id, hostId: req.user.userId });
+        if (!currentListing) {
+            return res.status(404).json({ message: "Listing not found" });
+        }
+
+        const nextImages = Array.isArray(images) ? images.filter(Boolean) : [];
+        const nextAmenities = Array.isArray(amenities) ? amenities.map((item) => String(item).trim()).filter(Boolean) : [];
+        const contentChanged = title !== currentListing.title
+            || description !== currentListing.description
+            || location !== currentListing.location
+            || JSON.stringify(nextImages) !== JSON.stringify(currentListing.images || [])
+            || JSON.stringify(nextAmenities) !== JSON.stringify(currentListing.amenities || []);
+        const updates = {
+            title,
+            description,
+            location,
+            images: nextImages,
+            amenities: nextAmenities,
+        };
+        if (contentChanged) {
+            updates.status = "pending_review";
+            updates.reviewReason = "";
+            updates.reviewedAt = null;
+            updates.reviewedBy = null;
+        }
+
         const updatedListing = await Listing.findOneAndUpdate(
             { _id: req.params.id, hostId: req.user.userId },
             {
-                $set: {
-                    title,
-                    description,
-                    location,
-                    images: Array.isArray(images) ? images.filter(Boolean) : [],
-                    amenities: Array.isArray(amenities) ? amenities.map((item) => String(item).trim()).filter(Boolean) : [],
-                },
+                $set: updates,
             },
             { new: true, runValidators: true }
         );
@@ -293,7 +324,6 @@ router.put("/:id", authMiddleware, async (req, res) => {
             return res.status(404).json({ message: "Listing not found" });
         }
 
-        const normalizedRooms = normalizeRoomPayloads(rooms);
         await Room.deleteMany({ listingId: updatedListing._id });
         const createdRooms = await Room.insertMany(
             normalizedRooms.map((room) => ({
@@ -315,11 +345,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
     }
 });
 
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", authMiddleware, requireRoles("host", "admin"), async (req, res) => {
     try {
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
         if (!mongoose.isValidObjectId(req.params.id)) {
             return res.status(400).json({ message: "Invalid listing ID." });
         }

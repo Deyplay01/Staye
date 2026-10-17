@@ -21,19 +21,23 @@ export default function AdminBookingsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    load(filters);
+    const controller = new AbortController();
+    load(filters, { signal: controller.signal });
+    return () => controller.abort();
   }, []);
 
-  async function load(params = filters) {
+  async function load(params = filters, config = {}) {
     setIsLoading(true);
     setError("");
     try {
-      const data = await fetchAdminBookings(params);
+      const data = await fetchAdminBookings(params, config);
       setBookings(data.bookings || []);
     } catch (err) {
-      setError(err?.response?.data?.message || "Couldn't load bookings.");
+      if (err.name !== "CanceledError") {
+        setError(err?.response?.data?.message || "Couldn't load bookings.");
+      }
     } finally {
-      setIsLoading(false);
+      if (!config.signal?.aborted) setIsLoading(false);
     }
   }
 

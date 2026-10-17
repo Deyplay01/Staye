@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
-import { registerAdmin } from "../../api/auth";
 import { useAuth } from "../../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
 
 export default function AdminRegisterPage() {
-  const { login, registerAdminGoogle } = useAuth();
+  const { registerHost, registerHostGoogle } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "", registrationKey: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,17 +18,16 @@ export default function AdminRegisterPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     setIsSubmitting(true);
     try {
-      await registerAdmin(form);
-      await login(form.email, form.password);
+      await registerHost(form.name, form.email, form.password);
       navigate("/admin/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || "Admin registration failed. Please check your details.");
+      setError(err?.response?.data?.message || "Host registration failed. Please check your details.");
     } finally {
       setIsSubmitting(false);
     }
@@ -37,16 +35,12 @@ export default function AdminRegisterPage() {
 
   async function handleGoogleSuccess(response) {
     setError("");
-    if (!form.registrationKey) {
-      setError("Enter the registration key before using Google sign-up.");
-      return;
-    }
     setIsSubmitting(true);
     try {
-      await registerAdminGoogle(response.credential, form.registrationKey);
+      await registerHostGoogle(response.credential);
       navigate("/admin/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || "Admin Google registration failed.");
+      setError(err?.response?.data?.message || "Host Google registration failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -67,15 +61,14 @@ export default function AdminRegisterPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-[#243119]">Join as a host</h1>
-          <p className="mt-2 text-sm leading-6 text-[#629460]">Set up your admin account to manage listings and bookings.</p>
+          <p className="mt-2 text-sm leading-6 text-[#629460]">Create a host account to manage listings and bookings. New listings are reviewed before going public.</p>
 
           {error && <p className="mt-5 rounded-xl bg-[#C9F2C7] px-3 py-2 text-sm text-[#243119]">{error}</p>}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Full name</span><input required value={form.name} onChange={(event) => update("name", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Email</span><input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
-            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Password</span><input required minLength={6} type="password" value={form.password} onChange={(event) => update("password", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
-            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Registration key</span><input required type="password" value={form.registrationKey} onChange={(event) => update("registrationKey", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
+            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Password</span><input required minLength={8} type="password" value={form.password} onChange={(event) => update("password", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
             <Button type="submit" className="w-full bg-[#243119] hover:bg-[#629460]" size="lg" disabled={isSubmitting}>{isSubmitting ? "Creating workspace..." : "Create host account"}</Button>
           </form>
 
@@ -85,7 +78,7 @@ export default function AdminRegisterPage() {
             <div className="h-px flex-1 bg-slate-200" />
           </div>
           <div className="flex justify-center">
-            <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-up was cancelled.")} theme="outline" size="large" shape="rounded" width="320" />
+            <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-up was cancelled.")} theme="outline" size="large" shape="rounded" width="240" />
           </div>
 
           <p className="mt-6 text-center text-sm text-[#629460]">Already a host? <Link to="/admin/login" className="font-bold text-[#243119] hover:underline">Log in</Link></p>

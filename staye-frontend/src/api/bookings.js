@@ -25,13 +25,13 @@ export async function cancelBooking(id) {
   return data.booking;
 }
 
-export async function fetchBookingDashboard(params = {}) {
-  const { data } = await apiClient.get("/bookings/dashboard", { params });
+export async function fetchBookingDashboard(params = {}, config = {}) {
+  const { data } = await apiClient.get("/bookings/dashboard", { params, ...config });
   return data;
 }
 
-export async function fetchAdminBookings(params = {}) {
-  const { data } = await apiClient.get("/bookings/admin-bookings", { params });
+export async function fetchAdminBookings(params = {}, config = {}) {
+  const { data } = await apiClient.get("/bookings/admin-bookings", { params, ...config });
   return data;
 }
 
@@ -39,4 +39,3 @@ export async function verifyAdminBooking(id) {
   const { data } = await apiClient.get(`/bookings/admin-bookings/${encodeURIComponent(id)}/verify`);
   return data;
 }
-

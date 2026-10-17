@@ -1,7 +1,7 @@
 import apiClient from "./client";
 
-export async function fetchNotifications(limit = 20) {
-  const { data } = await apiClient.get("/notifications", { params: { limit } });
+export async function fetchNotifications(limit = 20, config = {}) {
+  const { data } = await apiClient.get("/notifications", { params: { limit }, ...config });
   return data;
 }
 

@@ -18,22 +18,24 @@ export default function AdminNotificationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function load() {
+  async function load(config = {}) {
     setIsLoading(true);
     try {
-      const data = await fetchNotifications(50);
+      const data = await fetchNotifications(50, config);
       setNotifications(data.notifications || []);
     } catch (err) {
-      setError(
-        err?.response?.data?.message || "Couldn't load admin notifications.",
-      );
+      if (err.name !== "CanceledError") {
+        setError(err?.response?.data?.message || "Couldn't load admin notifications.");
+      }
     } finally {
-      setIsLoading(false);
+      if (!config.signal?.aborted) setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load({ signal: controller.signal });
+    return () => controller.abort();
   }, []);
 
   async function openNotification(notification) {

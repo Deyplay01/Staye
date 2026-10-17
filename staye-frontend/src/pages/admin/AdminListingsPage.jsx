@@ -17,19 +17,23 @@ export default function AdminListingsPage() {
   const [filters, setFilters] = useState({ location: "", sortBy: "createdAt", order: "desc" });
 
   useEffect(() => {
-    load(filters);
+    const controller = new AbortController();
+    load(filters, { signal: controller.signal });
+    return () => controller.abort();
   }, []);
 
-  async function load(params = filters) {
+  async function load(params = filters, config = {}) {
     setIsLoading(true);
     setError("");
     try {
-      const data = await fetchMyListings(params);
+      const data = await fetchMyListings(params, config);
       setListings(data);
     } catch (err) {
-      setError(err?.response?.data?.message || "Couldn't load your listings.");
+      if (err.name !== "CanceledError") {
+        setError(err?.response?.data?.message || "Couldn't load your listings.");
+      }
     } finally {
-      setIsLoading(false);
+      if (!config.signal?.aborted) setIsLoading(false);
     }
   }
 

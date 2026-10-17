@@ -11,6 +11,7 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const Profile = require("../models/profile");
+const { getUserRole } = require("../utils/roles");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 router.post("/google/callback", async (req, res) => {
@@ -35,6 +36,9 @@ router.post("/google/callback", async (req, res) => {
     }
 
     let user = await User.findOne({ email: email.toLowerCase() });
+    if (user?.status === "blocked") {
+      return res.status(403).json({ message: "This account is blocked. Contact support for assistance." });
+    }
 
     if (user) {
       if (!user.google_id) {
@@ -46,6 +50,7 @@ router.post("/google/callback", async (req, res) => {
         name: name,
         email: email.toLowerCase(),
         google_id: googleId,
+        role: "guest",
       });
       await user.save();
 
@@ -77,13 +82,14 @@ router.post("/google/callback", async (req, res) => {
       await profile.save();
     }
 
-    const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET, {
+    const role = getUserRole(user);
+    const token = jwt.sign({ userId: user._id, role }, JWT_SECRET, {
       expiresIn: "1h", 
     });
 
     return res.status(200).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, avatar: picture || profile?.avatar || "", isAdmin: user.isAdmin },
+      user: { id: user._id, name: user.name, email: user.email, avatar: picture || profile?.avatar || "", role, isAdmin: role !== "guest" },
     });
   } catch (error) {
     console.error("Google feature integration error:", error);
@@ -94,7 +100,7 @@ router.post("/google/callback", async (req, res) => {
 router.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password || password.length < 6) {
+  if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string" || !name.trim() || !email.trim() || password.length < 6) {
     return res.status(400).json({
       message:
         "Name, email, and a password of at least 6 characters are required.",
@@ -102,7 +108,8 @@ router.post("/register", async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -111,8 +118,9 @@ router.post("/register", async (req, res) => {
 
     const user = new User({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
+      role: "guest",
     });
 
     await user.save();
@@ -130,13 +138,14 @@ router.post("/register", async (req, res) => {
 
     await profile.save();
 
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+    const role = getUserRole(user);
+    const token = jwt.sign({ userId: user._id, role }, JWT_SECRET, {
       expiresIn: "1h",
     });
 
     res.status(201).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: { id: user._id, name: user.name, email: user.email, role, isAdmin: role !== "guest" },
     });
   } catch (error) {
     console.error("Error during registration:", error);
@@ -155,13 +164,16 @@ router.post("/login", async (req, res) => {
 
   try {
     // Find the user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     // Check the password
-    const isMatch = await bcrypt.compare(password, user.password);
+    if (user.status === "blocked") {
+      return res.status(403).json({ message: "This account is blocked. Contact support for assistance." });
+    }
+    const isMatch = user.password && typeof password === "string" ? await bcrypt.compare(password, user.password) : false;
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -181,15 +193,16 @@ router.post("/login", async (req, res) => {
     }
 
     // Generate a JWT token
+    const role = getUserRole(user);
     const token = jwt.sign(
-      { userId: user._id, isAdmin: user.isAdmin },
+      { userId: user._id, role },
       JWT_SECRET,
       { expiresIn: "1h" },
     );
 
     res.json({
       token,
-      user: { id: user._id, name: user.name, isAdmin: user.isAdmin },
+      user: { id: user._id, name: user.name, role, isAdmin: role !== "guest" },
     });
   } catch (error) {
     console.error("Error during login:", error);

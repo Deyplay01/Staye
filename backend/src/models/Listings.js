@@ -26,6 +26,26 @@ const listingSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
+    status: {
+        type: String,
+        enum: ["pending_review", "approved", "rejected"],
+        default: "pending_review",
+        index: true,
+    },
+    reviewReason: {
+        type: String,
+        default: "",
+        maxlength: 500,
+    },
+    reviewedAt: {
+        type: Date,
+        default: null,
+    },
+    reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Listing", listingSchema);

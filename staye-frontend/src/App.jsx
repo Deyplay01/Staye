@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from "react";
+import React, { lazy, Suspense, useLayoutEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -10,7 +10,6 @@ import BookingPage from "./pages/customer/BookingPage";
 import ConfirmationPage from "./pages/customer/ConfirmationPage";
 import MyBookingsPage from "./pages/customer/MyBookingsPage";
 import UserDashboardPage from "./pages/customer/UserDashboardPage";
-import ReceiptPage from "./pages/customer/ReceiptPage";
 import NotificationsPage from "./pages/customer/NotificationsPage";
 import ProfilePage from "./pages/customer/ProfilePage";
 
@@ -24,6 +23,10 @@ import AdminListingsPage from "./pages/admin/AdminListingsPage";
 import AdminBookingsPage from "./pages/admin/AdminBookingsPage";
 import AdminBookingVerificationPage from "./pages/admin/AdminBookingVerificationPage";
 import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage";
+import LoadingSpinner from "./components/common/LoadingSpinner";
+
+const ReceiptPage = lazy(() => import("./pages/customer/ReceiptPage"));
+const SuperAdminPage = lazy(() => import("./pages/admin/SuperAdminPage"));
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -39,6 +42,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <Suspense fallback={<LoadingSpinner label="Loading page..." />}>
       <Routes>
       {/* Customer side */}
       <Route path="/" element={<HomePage />} />
@@ -121,13 +125,13 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Admin side — separate login, everything else protected */}
+      {/* Host workspace — separate login, management pages protected by role */}
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin/register" element={<AdminRegisterPage />} />
       <Route
         path="/admin/dashboard"
         element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute allowedRoles={["host", "admin"]}>
             <AdminDashboardPage />
           </ProtectedRoute>
         }
@@ -135,7 +139,7 @@ export default function App() {
       <Route
         path="/admin/listings"
         element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute allowedRoles={["host", "admin"]}>
             <AdminListingsPage />
           </ProtectedRoute>
         }
@@ -143,7 +147,7 @@ export default function App() {
       <Route
         path="/admin/bookings"
         element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute allowedRoles={["host", "admin"]}>
             <AdminBookingsPage />
           </ProtectedRoute>
         }
@@ -151,7 +155,7 @@ export default function App() {
       <Route
         path="/admin/verify-booking"
         element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute allowedRoles={["host", "admin"]}>
             <AdminBookingVerificationPage />
           </ProtectedRoute>
         }
@@ -159,8 +163,16 @@ export default function App() {
       <Route
         path="/admin/notifications"
         element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute allowedRoles={["host", "admin"]}>
             <AdminNotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <SuperAdminPage />
           </ProtectedRoute>
         }
       />
@@ -169,6 +181,7 @@ export default function App() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </>
   );
 }

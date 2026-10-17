@@ -10,7 +10,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [desktopMenu, setDesktopMenu] = useState(null);
   const desktopMenuRef = useRef(null);
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isHost, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState(user?.avatar || "");
   const initials = (user?.name || "Guest")
@@ -21,13 +21,21 @@ export default function Navbar() {
     .toUpperCase();
 
   useEffect(() => {
+    const controller = new AbortController();
     if (!isAuthenticated) {
       setAvatar("");
-      return;
+      return () => controller.abort();
     }
     setAvatar(user?.avatar || "");
-    fetchProfile().then((profile) => setAvatar(profile.avatar || user?.avatar || "")).catch(() => setAvatar(user?.avatar || ""));
-  }, [isAuthenticated, user?.avatar]);
+    fetchProfile({ signal: controller.signal })
+      .then((profile) => setAvatar(profile.avatar || user?.avatar || ""))
+      .catch((error) => {
+        if (error.name !== "CanceledError" && !controller.signal.aborted) {
+          setAvatar(user?.avatar || "");
+        }
+      });
+    return () => controller.abort();
+  }, [isAuthenticated, user?.avatar, user?.id]);
 
   useEffect(() => {
     function closeDesktopMenu(event) {
@@ -74,7 +82,7 @@ export default function Navbar() {
               </button>
               {desktopMenu === "account" && (
                 <div className="absolute right-0 top-full mt-3 w-56 rounded-2xl border border-ink-300 bg-white p-2 shadow-popover">
-                  {!user?.isAdmin && <Link to="/dashboard" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Dashboard</Link>}
+                  <Link to="/dashboard" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Dashboard</Link>
                   <Link to="/my-bookings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><CalendarCheck2 className="h-4 w-4" aria-hidden="true" /> My bookings</Link>
                   <Link to="/profile" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><UserRound className="h-4 w-4" aria-hidden="true" /> Profile</Link>
                   <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-ink-700 hover:bg-brand-light"><LogOut className="h-4 w-4" aria-hidden="true" /> Log out</button>
@@ -95,16 +103,17 @@ export default function Navbar() {
             </>
           )}
 
-          {user?.isAdmin ? (
+          {isHost ? (
             <div className="relative border-l border-ink-300 pl-5">
               <button type="button" onClick={() => setDesktopMenu(desktopMenu === "admin" ? null : "admin")} aria-expanded={desktopMenu === "admin"} className="flex items-center gap-1.5 text-sm font-medium text-ink-500 hover:text-brand">
-                <Building2 className="h-4 w-4" aria-hidden="true" /> Admin workspace <ChevronDown className={`h-4 w-4 transition-transform ${desktopMenu === "admin" ? "rotate-180" : ""}`} aria-hidden="true" />
+                <Building2 className="h-4 w-4" aria-hidden="true" /> {isSuperAdmin ? "Admin console" : "Host workspace"} <ChevronDown className={`h-4 w-4 transition-transform ${desktopMenu === "admin" ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
               {desktopMenu === "admin" && (
                 <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-ink-300 bg-white p-2 shadow-popover">
                   <Link to="/admin/dashboard" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Dashboard</Link>
                   <Link to="/admin/listings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><Building2 className="h-4 w-4" aria-hidden="true" /> Listings</Link>
                   <Link to="/admin/bookings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><CalendarCheck2 className="h-4 w-4" aria-hidden="true" /> Bookings</Link>
+                  {isSuperAdmin && <Link to="/admin/users" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><UserCog className="h-4 w-4" aria-hidden="true" /> Trust &amp; safety</Link>}
                 </div>
               )}
             </div>
@@ -114,7 +123,7 @@ export default function Navbar() {
               className="flex items-center gap-1.5 border-l border-ink-300 pl-6 text-sm font-medium text-ink-500 hover:text-brand"
             >
               <UserCog className="h-4 w-4" aria-hidden="true" />
-              Admin
+              Host login
             </Link>
           )}
         </nav>
@@ -145,15 +154,13 @@ export default function Navbar() {
           </Link>
           {isAuthenticated ? (
             <>
-              {!user?.isAdmin && (
-                <Link
-                  to="/dashboard"
-                  onClick={() => setOpen(false)}
-                  className="block rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70"
-                >
-                  Dashboard
-                </Link>
-              )}
+              <Link
+                to="/dashboard"
+                onClick={() => setOpen(false)}
+                className="block rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70"
+              >
+                Dashboard
+              </Link>
               <Link
                 to="/my-bookings"
                 onClick={() => setOpen(false)}
@@ -190,13 +197,18 @@ export default function Navbar() {
             </>
           )}
           <Link
-            to={user?.isAdmin ? "/admin/dashboard" : "/admin/login"}
+            to={isHost ? "/admin/dashboard" : "/admin/login"}
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-500 hover:bg-white/70"
           >
-            {user?.isAdmin ? <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> : <UserCog className="h-4 w-4" aria-hidden="true" />}
-            {user?.isAdmin ? "Dashboard" : "Host login"}
+            {isHost ? <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> : <UserCog className="h-4 w-4" aria-hidden="true" />}
+            {isHost ? (isSuperAdmin ? "Admin console" : "Host workspace") : "Host login"}
           </Link>
+          {isSuperAdmin && (
+            <Link to="/admin/users" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-500 hover:bg-white/70">
+              <UserCog className="h-4 w-4" aria-hidden="true" /> Trust &amp; safety
+            </Link>
+          )}
         </div>
       )}
     </header>

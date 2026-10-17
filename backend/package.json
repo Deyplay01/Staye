@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "migrate:booking-references": "node scripts/migrateBookingReferences.js"
+    "migrate:booking-references": "node scripts/migrateBookingReferences.js",
+    "migrate:user-roles": "node scripts/migrateUserRoles.js",
+    "bootstrap:super-admin": "node scripts/bootstrapSuperAdmin.js"
   },
   "keywords": [],
   "author": "",

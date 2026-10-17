@@ -36,25 +36,34 @@ export default function AdminDashboardPage() {
   }
 
   useEffect(() => {
+    const controller = new AbortController();
     const bounds = getPeriodBounds(period, periodValue);
-    if (period !== "all" && (!bounds || !bounds.start || !bounds.end)) return;
+    if (period !== "all" && (!bounds || !bounds.start || !bounds.end)) {
+      setIsLoading(false);
+      return () => controller.abort();
+    }
     const params = bounds ? bounds : { period: "all" };
+    setIsLoading(true);
+    setError("");
     Promise.all([
-      fetchMyListings({ sortBy: "createdAt", order: "desc" }),
-      fetchBookingDashboard(params),
-      fetchAdminBookings(),
+      fetchMyListings({ sortBy: "createdAt", order: "desc" }, { signal: controller.signal }),
+      fetchBookingDashboard(params, { signal: controller.signal }),
+      fetchAdminBookings({}, { signal: controller.signal }),
     ])
       .then(([listingData, dashboardData, bookingData]) => {
         setListings(listingData);
         setDashboard(dashboardData);
         setBookings(bookingData.bookings || []);
       })
-      .catch((err) =>
-        setError(
-          err?.response?.data?.message || "Couldn't load the dashboard.",
-        ),
-      )
-      .finally(() => setIsLoading(false));
+      .catch((err) => {
+        if (err.name !== "CanceledError") {
+          setError(err?.response?.data?.message || "Couldn't load the dashboard.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+    return () => controller.abort();
   }, [period, periodValue]);
 
   const roomPrices = listings.flatMap((listing) =>
@@ -112,7 +121,7 @@ export default function AdminDashboardPage() {
         <div>
           <p className="staye-eyebrow">Host workspace</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-navy-900">
-            Good {greeting}, {user?.name?.split(" ")[0] || "admin"}.
+            Good {greeting}, {user?.name?.split(" ")[0] || "host"}.
           </h1>
           <p className="mt-1 text-sm text-ink-500">
             A clear view of your spaces, stays, and momentum.

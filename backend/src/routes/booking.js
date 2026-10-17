@@ -5,6 +5,8 @@ const Booking = require("../models/Booking");
 const Listing = require("../models/Listings");
 const Room = require("../models/Room");
 const authMiddleware = require("../middleware/Authentication");
+const { requireRoles } = require("../utils/roles");
+const { User } = require("../models/User");
 const { createNotification } = require("../utils/notifications");
 
 function parseBookingDates(checkIn, checkOut) {
@@ -82,9 +84,15 @@ router.post("/", authMiddleware, async (req, res) => {
         const session = await mongoose.startSession();
         try {
             await session.withTransaction(async () => {
-                const listing = await Listing.findById(listingId).session(session);
+                const listing = await Listing.findOne({ _id: listingId, status: "approved" }).session(session);
                 if (!listing) {
-                    const error = new Error("Listing not found.");
+                    const error = new Error("This listing is unavailable.");
+                    error.statusCode = 404;
+                    throw error;
+                }
+                const host = await User.findById(listing.hostId).select("status").session(session);
+                if (!host || host.status === "blocked") {
+                    const error = new Error("This listing is unavailable.");
                     error.statusCode = 404;
                     throw error;
                 }
@@ -184,11 +192,8 @@ router.get("/my-bookings", authMiddleware, async (req, res) => {
     }
 });
 
-router.get("/dashboard", authMiddleware, async (req, res) => {
+router.get("/dashboard", authMiddleware, requireRoles("host", "admin"), async (req, res) => {
     try {
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
         const dates = parseDashboardDates(req.query.checkIn, req.query.checkOut);
         if (!dates) {
             return res.status(400).json({ message: "Provide both valid checkIn and checkOut dates, or omit both to use today." });
@@ -289,11 +294,8 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
     }
 });
 
-router.get("/admin-bookings", authMiddleware, async (req, res) => {
+router.get("/admin-bookings", authMiddleware, requireRoles("host", "admin"), async (req, res) => {
     try {
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
 
         const { sortBy = "createdAt", order = "desc" } = req.query;
         const allowedSortFields = ["createdAt", "updatedAt", "checkIn", "checkOut"];
@@ -333,11 +335,8 @@ router.get("/admin-bookings", authMiddleware, async (req, res) => {
     }
 });
 
-router.get("/admin-bookings/:id/verify", authMiddleware, async (req, res) => {
+router.get("/admin-bookings/:id/verify", authMiddleware, requireRoles("host", "admin"), async (req, res) => {
     try {
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
         const requestedReference = String(req.params.id || "").trim();
         const isPublicReference = /^STY-[A-F0-9]{18}$/i.test(requestedReference);
         const isLegacyId = mongoose.isValidObjectId(requestedReference);

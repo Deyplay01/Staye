@@ -25,6 +25,10 @@ export default function ListingsTable({ listings, onEdit, onDelete }) {
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-bold text-ink-900">{listing.title}</h2>
                   <p className="mt-1 truncate text-sm text-ink-500">{listing.location}</p>
+                  <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${listing.status === "approved" ? "bg-green-50 text-green-800" : listing.status === "rejected" ? "bg-red-50 text-danger" : "bg-amber-50 text-amber-800"}`}>
+                    {listing.status === "approved" ? "Published" : listing.status === "rejected" ? "Needs changes" : "Awaiting review"}
+                  </span>
+                  {listing.status === "rejected" && listing.reviewReason && <p className="mt-1 break-words text-xs text-danger">{listing.reviewReason}</p>}
                   <p className="mt-2 font-semibold text-ink-900">
                     {Number.isFinite(lowestPrice) ? formatPrice(lowestPrice) : "—"}
                     <span className="font-normal text-ink-500"> / night</span>
@@ -49,13 +53,14 @@ export default function ListingsTable({ listings, onEdit, onDelete }) {
       </div>
 
       <div className="hidden overflow-x-auto lg:block">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-ink-300 bg-gray-50 text-xs uppercase tracking-wide text-ink-500">
             <tr>
               <th className="px-4 py-3">Listing</th>
               <th className="px-4 py-3">Location</th>
               <th className="px-4 py-3">Room types</th>
               <th className="px-4 py-3">From / night</th>
+              <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
@@ -76,6 +81,12 @@ export default function ListingsTable({ listings, onEdit, onDelete }) {
                   <td className="px-4 py-3">{listing.location}</td>
                   <td className="px-4 py-3 text-ink-500">{(listing.rooms || []).map((room) => room.name).join(", ") || "No room types"}</td>
                   <td className="px-4 py-3 font-medium">{formatPrice(lowestPrice)}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${listing.status === "approved" ? "bg-green-50 text-green-800" : listing.status === "rejected" ? "bg-red-50 text-danger" : "bg-amber-50 text-amber-800"}`}>
+                      {listing.status === "approved" ? "Published" : listing.status === "rejected" ? "Needs changes" : "Awaiting review"}
+                    </span>
+                    {listing.status === "rejected" && listing.reviewReason && <p className="mt-1 max-w-48 text-xs text-danger">{listing.reviewReason}</p>}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-3">
                       <button

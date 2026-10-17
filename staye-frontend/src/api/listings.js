@@ -10,8 +10,8 @@ export async function fetchPopularLocations() {
   return data.locations || [];
 }
 
-export async function fetchMyListings(params = {}) {
-  const { data } = await apiClient.get("/listings/my-listings", { params });
+export async function fetchMyListings(params = {}, config = {}) {
+  const { data } = await apiClient.get("/listings/my-listings", { params, ...config });
   return data.listings;
 }
 
