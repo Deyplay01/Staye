@@ -25,15 +25,19 @@ Configure the existing Render web service to use `backend` as its root directory
 - `PAYSTACK_PUBLIC_KEY=<Paystack public key>`
 - `PAYSTACK_CURRENCY=NGN` (or the currency configured in Paystack)
 - `PAYSTACK_CALLBACK_URL=https://staye.vercel.app/payment/callback`
-- `UPLOADS_DIR=/var/data/uploads` (if using the persistent disk described below)
+- `CLOUDINARY_CLOUD_NAME=<Cloudinary cloud name>`
+- `CLOUDINARY_API_KEY=<Cloudinary API key>`
+- `CLOUDINARY_API_SECRET=<Cloudinary API secret>`
 
 Do not add the removed `ADMIN_REGISTRATION_KEY`. Do not put private values in Vercel variables, committed files, or client-prefixed `VITE_` variables.
 
 The Render service should use `/health/ready` as its health-check path. The endpoint returns success only after MongoDB is connected. `/health/live` is a simple process liveness endpoint.
 
-### Persistent uploaded images
+### Cloudinary image storage
 
-The backend serves host-uploaded images from local storage. Render's ordinary service filesystem is ephemeral, so uploaded images can disappear on redeploy/restart unless a persistent disk is attached. Attach a Render disk mounted at `/var/data`, and set `UPLOADS_DIR=/var/data/uploads`. Existing uploads need to be copied to that disk before switching the environment variable. If the service plan does not support a persistent disk or horizontal scaling is needed, move media to object storage (for example, S3 or Cloudinary) instead.
+Create a Cloudinary account and add its cloud name, API key, and API secret to the Render backend's private environment settings. The API secret must never be configured in Vercel or exposed through a `VITE_` variable. New profile and listing images are uploaded to Cloudinary; uploads are limited to 10 images per request, 5 MB per image, and 20 MB total.
+
+No Render persistent disk is needed for new uploads. Existing database references to `/uploads/...` still depend on their original local files, served by the legacy `/uploads` route. Keep those files available or migrate the existing image references to Cloudinary before removing their storage; the application does not automatically migrate or delete legacy media.
 
 ## Database rollout for the new roles
 

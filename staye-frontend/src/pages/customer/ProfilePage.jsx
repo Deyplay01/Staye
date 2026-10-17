@@ -88,6 +88,7 @@ export default function ProfilePage() {
       const result = await uploadImages(
         [file],
         localStorage.getItem("staye_token"),
+        "profile",
       );
       const avatar = result.images?.[0]?.url;
       if (avatar) setProfile((current) => ({ ...current, avatar }));
