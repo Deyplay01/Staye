@@ -33,4 +33,6 @@ New listings and edits to listing content enter **pending review** and remain hi
 
 The app currently has no email-verification, identity-verification, or payout-onboarding provider configured. Google sign-in verifies the Google email, but password-based accounts are not email-verified. Configure those controls with the chosen provider before relying on them for production payouts or identity assurance. Listing review and account moderation are available in the super-admin workspace at `/admin/users`.
 
+Listing and profile images are stored in Cloudinary. Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the backend environment; never expose the API secret to the frontend. Existing `/uploads/...` image URLs continue to use the legacy backend file-serving route and must be migrated separately before their original files are removed.
+
 The application currently uses the existing booking, listing, profile, notification, and payment API routes. Payment onboarding and payment UX remain subject to the existing payment integration.

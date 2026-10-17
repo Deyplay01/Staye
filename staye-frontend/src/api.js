@@ -33,16 +33,17 @@ export function getImageUrl(imageUrl) {
   return `${API_BASE_URL}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
 }
 
-export async function uploadImages(files, token) {
+export async function uploadImages(files, token, kind = "listing") {
   const formData = new FormData();
   files.forEach((file) => formData.append("images", file));
+  formData.append("kind", kind);
 
   const response = await fetch(`${API_BASE_URL}/api/uploads/images`, {
     method: "POST",
     headers: authHeaders(token),
     body: formData,
   });
-  if (!response.ok) throw new Error("Image upload failed.");
+  if (!response.ok) throw await getApiError(response, "Image upload failed.");
   return response.json();
 }
 
