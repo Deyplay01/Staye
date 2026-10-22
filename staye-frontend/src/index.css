@@ -1,17 +1,14 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --staye-mint: #c9f2c7;
-  --staye-leaf: #96be8c;
-  --staye-sage: #629460;
-  --staye-forest: #243119;
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-body: "Nunito", system-ui, sans-serif;
+  --staye-paper: #FAFAFA;
+  --staye-slate: #0F172A;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 html {
@@ -19,10 +16,18 @@ html {
 }
 
 body {
-  @apply bg-[#f5f8f2] text-ink-900 font-sans antialiased;
+  @apply text-ink-900 font-sans antialiased;
   min-width: 320px;
   font-family: var(--font-body);
-  color: var(--staye-forest);
+  color: var(--staye-slate);
+  background: var(--staye-paper);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
 }
 
 /* Visible keyboard focus ring, kept consistent across interactive elements */
@@ -32,7 +37,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #629460;
+  outline: 2px solid var(--staye-slate);
   outline-offset: 2px;
 }
 
@@ -45,14 +50,44 @@ textarea:focus-visible,
   }
 }
 
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+  }
+}
+
 /* Simple custom scrollbar for horizontal filter chips / galleries */
 .scrollbar-thin::-webkit-scrollbar {
   height: 6px;
   width: 6px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #96be8c;
+  background: #CBD5E1;
   border-radius: 999px;
+}
+
+.hero-date-input::-webkit-calendar-picker-indicator {
+  display: none;
 }
 
 .staye-shell {
@@ -71,11 +106,17 @@ textarea:focus-visible,
 }
 
 .staye-eyebrow {
-  color: var(--staye-sage);
+  color: #64748B;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  accent-color: var(--staye-slate);
 }
 
 @media (min-width: 640px) {

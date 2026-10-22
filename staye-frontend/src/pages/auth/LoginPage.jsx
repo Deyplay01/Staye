@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import Navbar from "../../components/layout/Navbar";
+import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/common/Button";
 import PasswordInput from "../../components/common/PasswordInput";
 import GoogleAuthButton from "../../components/common/GoogleAuthButton";
@@ -57,60 +57,48 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-white bg-cover bg-center"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(36, 49, 25, 0.38), rgba(36, 49, 25, 0.38)), url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1800&q=85)",
-      }}
+    <AuthLayout
+      eyebrow="Welcome back"
+      title="Log in"
+      description="Access your account to book a stay and keep your travel plans together."
+      footer={<>New to Stayé?{" "}<Link to={`/register${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className="font-bold text-slate-900 hover:text-brand">Create an account</Link></>}
     >
-      <Navbar />
-      <div className="mx-auto max-w-md px-4 py-12 sm:px-6 sm:py-20">
-        <div className="rounded-3xl border border-[#96BE8C] bg-white p-6 shadow-popover sm:p-10">
-          <div className="mb-8 flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#243119] text-lg font-bold text-[#C9F2C7]">
-              S
-            </span>
-            <div>
-              <p className="text-lg font-bold text-[#243119]">Stayé</p>
-              <p className="text-xs text-[#629460]">Welcome back</p>
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#243119]">
-            Log in
-          </h1>
-          <p className="mb-6 text-sm text-ink-500">
-            Log in to book a stay or view your bookings.
-          </p>
-
           {error && (
-            <p className="mb-4 rounded-xl bg-[#C9F2C7] px-3 py-2 text-sm text-[#243119]">
+            <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
             </p>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">
                 Email
               </span>
               <input
                 required
                 type="email"
+                id="username"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-ink-300 bg-white px-3 py-3 text-sm outline-none focus:border-brand"
+                autoComplete="username"
+                spellCheck="false"
+                placeholder="you@example.com"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">
                 Password
               </span>
               <PasswordInput
                 required
+                id="current-password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-ink-300 bg-white px-3 py-3 text-sm outline-none focus:border-brand"
+                autoComplete="current-password"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
             </label>
             <Button
@@ -123,25 +111,13 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="my-5 flex items-center justify-center gap-2">
-            <div className="h-[1px] w-full bg-slate-200"></div>
-            <span className="text-xs text-slate-400 uppercase tracking-wider">or</span>
-            <div className="h-[1px] w-full bg-slate-200"></div>
+          <div className="my-6 flex items-center justify-center gap-3">
+            <div className="h-px flex-1 bg-slate-200"></div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">or continue with</span>
+            <div className="h-px flex-1 bg-slate-200"></div>
           </div>
 
           <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} disabled={isSubmitting} />
-
-          <p className="mt-4 text-center text-sm text-ink-500">
-            Don't have an account?{" "}
-            <Link
-              to={`/register${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
-              className="font-semibold text-[#629460] hover:underline"
-            >
-              Sign up
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -84,9 +84,9 @@ export default function AdminBookingVerificationPage() {
           {error && <div className="mt-4 flex items-start gap-3 rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm text-danger"><XCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><div><p className="font-semibold">{error.code === "INVALID_REFERENCE_FORMAT" ? "Invalid reference format" : error.code === "REFERENCE_NOT_FOUND" ? "Reference not found" : error.code === "REFERENCE_NOT_OWNED" ? "Reference not available" : "Verification failed"}</p><p className="mt-1">{error.message}</p></div></div>}
 
           {booking && (
-            <div className={`mt-5 rounded-xl border p-4 ${verification.isValid ? "border-success/40 bg-brand-light/40" : "border-amber-300 bg-amber-50"}`}>
+            <div className={`mt-5 rounded-xl border p-4 ${verification.isValid ? "border-success/40 bg-brand-light/40" : "border-slate-300 bg-slate-100"}`}>
               <div className="flex items-start gap-3">
-                {verification.isValid ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" /> : <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />}
+                {verification.isValid ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" /> : <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-slate-600" aria-hidden="true" />}
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-ink-900">{resultDetails.title}</p>
                   <p className="mt-1 text-sm text-ink-700">{resultDetails.message}</p>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import Navbar from "../../components/layout/Navbar";
+import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/common/Button";
 import PasswordInput from "../../components/common/PasswordInput";
 import GoogleAuthButton from "../../components/common/GoogleAuthButton";
@@ -56,50 +56,54 @@ export default function RegisterPage() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-white bg-cover bg-center"
-      style={{ backgroundImage: "linear-gradient(rgba(36, 49, 25, 0.38), rgba(36, 49, 25, 0.38)), url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1800&q=85)" }}
+    <AuthLayout
+      eyebrow="Your next stay starts here"
+      title="Create an account"
+      description="Save your details, book a stay, and keep your trip information in one place."
+      footer={<>Already have an account?{" "}<Link to={`/login${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className="font-bold text-slate-900 hover:text-brand">Log in</Link></>}
     >
-      <Navbar />
-      <div className="mx-auto max-w-md px-4 py-12 sm:px-6 sm:py-20">
-        <div className="rounded-3xl border border-[#96BE8C] bg-white p-6 shadow-popover sm:p-10">
-          <div className="mb-8 flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#629460] text-lg font-bold text-[#C9F2C7]">S</span>
-            <div><p className="text-lg font-bold text-[#243119]">Stayé</p><p className="text-xs text-[#629460]">Start your next stay</p></div>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#243119]">Create an account</h1>
-          <p className="mb-6 text-sm text-ink-500">You'll need this to complete a booking.</p>
-
-          {error && <p className="mb-4 rounded-xl bg-[#C9F2C7] px-3 py-2 text-sm text-[#243119]">{error}</p>}
+          {error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">Full name</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Full name</span>
               <input
                 required
+                id="name"
+                name="name"
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
-                className="w-full rounded-xl border border-ink-300 bg-white px-3 py-3 text-sm outline-none focus:border-brand"
+                autoComplete="name"
+                placeholder="Your name"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">Email</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Email</span>
               <input
                 required
                 type="email"
+                id="email"
+                name="email"
                 value={form.email}
                 onChange={(e) => update("email", e.target.value)}
-                className="w-full rounded-xl border border-ink-300 bg-white px-3 py-3 text-sm outline-none focus:border-brand"
+                autoComplete="email"
+                spellCheck="false"
+                placeholder="you@example.com"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-ink-700">Password</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Password</span>
               <PasswordInput
                 required
                 minLength={6}
+                id="new-password"
+                name="password"
                 value={form.password}
                 onChange={(e) => update("password", e.target.value)}
-                className="w-full rounded-xl border border-ink-300 bg-white px-3 py-3 text-sm outline-none focus:border-brand"
+                autoComplete="new-password"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
               <span className="mt-1 block text-xs text-ink-500">At least 6 characters.</span>
             </label>
@@ -108,25 +112,13 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <div className="my-5 flex items-center justify-center gap-2">
-            <div className="h-[1px] w-full bg-slate-200"></div>
-            <span className="text-xs uppercase tracking-wider text-slate-400">or</span>
-            <div className="h-[1px] w-full bg-slate-200"></div>
+          <div className="my-6 flex items-center justify-center gap-3">
+            <div className="h-px flex-1 bg-slate-200"></div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">or continue with</span>
+            <div className="h-px flex-1 bg-slate-200"></div>
           </div>
 
           <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} text="signup_with" disabled={isSubmitting} />
-
-          <p className="mt-4 text-center text-sm text-ink-500">
-            Already have an account?{" "}
-            <Link
-              to={`/login${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
-              className="font-semibold text-[#629460] hover:underline"
-            >
-              Log in
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

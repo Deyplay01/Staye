@@ -6,6 +6,7 @@ import Footer from "../../components/layout/Footer";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import EmptyState from "../../components/common/EmptyState";
 import Button from "../../components/common/Button";
+import HomeIconLink from "../../components/common/HomeIconLink";
 import { fetchBookingById } from "../../api/bookings";
 import { fetchListingById } from "../../api/listings";
 import { formatDateLong, calculateNights } from "../../utils/date";
@@ -87,7 +88,7 @@ export default function ConfirmationPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#FAFAFA]">
         <Navbar />
         <LoadingSpinner label="Loading your booking..." />
       </div>
@@ -96,15 +97,13 @@ export default function ConfirmationPage() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#FAFAFA]">
         <Navbar />
         <div className="mx-auto max-w-3xl px-4 py-16">
           <EmptyState
             title="We couldn't find that booking"
             action={
-              <Link to="/" className="text-sm font-semibold text-brand hover:underline">
-                Back to home
-              </Link>
+              <HomeIconLink />
             }
           />
         </div>
@@ -115,40 +114,48 @@ export default function ConfirmationPage() {
   const nights = calculateNights(booking.checkIn, booking.checkOut);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar />
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
-        <div className="rounded-sm border border-ink-300 bg-white p-6 text-center shadow-card sm:p-8">
-          <CheckCircle2 className="mx-auto h-14 w-14 text-success" aria-hidden="true" />
-          <h1 className="mt-4 text-2xl font-bold text-ink-900">Booking created!</h1>
-          <p className="mt-1 text-sm text-ink-500">
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-10">
+        <div className="mb-5 flex justify-end">
+          <HomeIconLink />
+        </div>
+        <section className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card sm:p-8">
+          <div className="text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
+              <CheckCircle2 className="h-8 w-8 text-success" aria-hidden="true" />
+            </div>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-brand">Booking update</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy-900 sm:text-3xl">Booking created!</h1>
+          </div>
+          <p className="mt-2 text-center text-sm text-ink-500">
             Status: <span className="font-medium">{STATUS_LABEL[booking.status] || booking.status}</span>
           </p>
-          {paymentMessage && <p className="mt-3 rounded-sm bg-brand-light px-3 py-2 text-sm text-ink-700">{paymentMessage}</p>}
+          {paymentMessage && <p role="status" className="mt-5 rounded-xl border border-brand/10 bg-brand-light px-4 py-3 text-sm text-ink-700">{paymentMessage}</p>}
 
-          <div className="mt-6 rounded-sm bg-brand-light p-4 text-left">
-            <p className="text-xs uppercase tracking-wide text-ink-500">Booking ID</p>
-            <p className="text-lg font-bold tracking-wide text-navy-900">{booking.publicReference || booking._id}</p>
+          <div className="mt-7 rounded-2xl bg-slate-50 p-4 text-left sm:p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Booking reference</p>
+            <p className="mt-1 break-all text-lg font-bold tracking-wide text-navy-900">{booking.publicReference || booking._id}</p>
           </div>
 
-          <div className="mt-6 space-y-3 text-left text-sm">
-            <div className="flex items-center gap-3 border-b border-ink-300 pb-3">
-              <Calendar className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+          <div className="mt-5 space-y-4 rounded-2xl border border-ink-300 p-4 text-left text-sm sm:p-5">
+            <div className="flex items-start gap-3 border-b border-ink-300 pb-4">
+              <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden="true" />
               <div>
-                <p className="font-medium text-ink-900">{listing?.title || "Listing"}</p>
-                <p className="text-ink-500">
+                <p className="font-semibold text-ink-900">{listing?.title || "Listing"}</p>
+                <p className="mt-1 leading-6 text-ink-500">
                   {booking.roomId?.name || "Room"} · {formatDateLong(booking.checkIn)} → {formatDateLong(booking.checkOut)} ·{" "}
                   {nights} night{nights !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
             {typeof booking.totalAmount === "number" && (
-              <div className="flex justify-between pt-1 text-base font-bold text-ink-900">
+              <div className="flex justify-between gap-4 text-base font-bold text-ink-900">
                 <span>Total</span>
                 <span>{formatPrice(booking.totalAmount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm text-ink-500">
+            <div className="flex justify-between gap-4 text-sm text-ink-500">
               <span>Payment status</span>
               <span className="font-medium capitalize">{booking.paymentStatus || "unpaid"}</span>
             </div>
@@ -173,12 +180,9 @@ export default function ConfirmationPage() {
             <Link to="/my-bookings">
               <Button variant={booking.paymentStatus === "paid" ? "primary" : "outline"}>View my bookings</Button>
             </Link>
-            <Link to="/">
-              <Button variant="outline">Back to home</Button>
-            </Link>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
       <Footer />
     </div>
   );

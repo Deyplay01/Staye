@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/common/Button";
 import PasswordInput from "../../components/common/PasswordInput";
 import GoogleAuthButton from "../../components/common/GoogleAuthButton";
@@ -53,36 +54,41 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-white bg-cover bg-center px-4 py-10"
-      style={{ backgroundImage: "linear-gradient(rgba(36, 49, 25, 0.38), rgba(36, 49, 25, 0.38)), url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1800&q=85)" }}
+    <AuthLayout
+      host
+      eyebrow="Host workspace"
+      title="Welcome back"
+      description="Sign in to manage your property, rooms, and guest bookings."
+      footer={<>New to hosting on Staye?{" "}<Link to="/admin/register" className="font-bold text-slate-900 hover:text-brand">Create a host account</Link></>}
     >
-      <div className="w-full max-w-md rounded-3xl border border-[#96BE8C] bg-white p-6 shadow-popover sm:p-10">
-        <div className="mb-8 flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-bold">S</span>
-          <div><p className="text-lg font-bold text-[#243119]">Stayé / host</p><p className="text-xs text-[#629460]">Host workspace login</p></div>
-        </div>
+        {error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
 
-        {error && <p className="mb-4 rounded-xl bg-[#c9f2c7] px-3 py-2 text-sm text-navy-900">{error}</p>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-ink-700">Email</span>
+            <span className="mb-2 block text-sm font-semibold text-slate-700">Email</span>
             <input
               required
               type="email"
+              id="username"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-ink-300 px-3 py-3 text-sm outline-none focus:border-brand"
+              autoComplete="username"
+              spellCheck="false"
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-ink-700">Password</span>
+            <span className="mb-2 block text-sm font-semibold text-slate-700">Password</span>
             <PasswordInput
               required
+              id="current-password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-ink-300 px-3 py-3 text-sm outline-none focus:border-brand"
+              autoComplete="current-password"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10"
             />
           </label>
           <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
@@ -90,19 +96,15 @@ export default function AdminLoginPage() {
           </Button>
         </form>
 
-        <div className="my-5 flex items-center gap-2">
+        <div className="my-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs uppercase tracking-wider text-slate-400">or</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">or continue with</span>
           <div className="h-px flex-1 bg-slate-200" />
         </div>
         <div className="flex justify-center">
           <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-in couldn't be completed. Please try again.")} disabled={isSubmitting} />
         </div>
 
-        <p className="mt-4 text-center text-sm text-ink-500">
-          Need a host account? <Link to="/admin/register" className="font-bold text-brand hover:underline">Register here</Link>
-        </p>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

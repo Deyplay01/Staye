@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stayé — Handcrafted Luxury Stays & Boutique Hotels</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            slate: {
+              25: '#FCFDFF',
+              50: '#F8FAFC',
+              100: '#F1F5F9',
+              200: '#E2E8F0',
+              300: '#CBD5E1',
+              400: '#94A3B8',
+              500: '#64748B',
+              600: '#475569',
+              700: '#334155',
+              800: '#1E293B',
+              900: '#0F172A',
+              950: '#020617',
+            },
+            emerald: {
+              50: '#ECFDF5',
+              100: '#D1FAE5',
+              500: '#10B981',
+              600: '#059669', // Emerald accent
+              700: '#047857',
+            },
+            coral: '#FF385C'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FAFAFA; color: #0F172A; }
+    
+    ::-webkit-scrollbar { height: 4px; width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .shadow-figma-sm { box-shadow: 0px 1px 2px rgba(15, 23, 42, 0.04), 0px 1px 3px rgba(15, 23, 42, 0.02); }
+    .shadow-figma-md { box-shadow: 0px 4px 12px -2px rgba(15, 23, 42, 0.08), 0px 2px 4px -1px rgba(15, 23, 42, 0.03); }
+    .shadow-figma-lg { box-shadow: 0px 12px 32px -4px rgba(15, 23, 42, 0.12), 0px 4px 12px -2px rgba(15, 23, 42, 0.04); }
+  </style>
+</head>
+<body class="text-slate-900 bg-[#FAFAFA] min-h-screen flex flex-col antialiased selection:bg-slate-900 selection:text-white">
+
+  <!-- Toast Notification Wrapper -->
+  <div id="toast-wrapper" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- MAIN NAVIGATION HEADER -->
+  <header class="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <a href="#" onclick="switchView('explore')" class="flex items-center gap-2 group">
+        <div class="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-lg tracking-wider shadow-sm group-hover:bg-emerald-600 transition-colors">
+          S
+        </div>
+        <span class="text-lg font-bold tracking-tight text-slate-900">Stayé<span class="text-emerald-600">.</span></span>
+      </a>
+
+      <!-- Page Switcher Tabs -->
+      <nav class="hidden md:flex items-center gap-1 bg-slate-100/80 p-1.5 rounded-full border border-slate-200/60">
+        <button onclick="switchView('explore')" id="nav-explore" class="nav-btn text-xs font-semibold px-4 py-2 rounded-full transition-all bg-white text-slate-900 shadow-sm">
+          Explore
+        </button>
+        <button onclick="switchView('details')" id="nav-details" class="nav-btn text-xs font-semibold px-4 py-2 rounded-full transition-all text-slate-600 hover:text-slate-900">
+          Property Details
+        </button>
+        <button onclick="switchView('bookings')" id="nav-bookings" class="nav-btn text-xs font-semibold px-4 py-2 rounded-full transition-all text-slate-600 hover:text-slate-900">
+          My Bookings <span class="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">2</span>
+        </button>
+        <button onclick="switchView('host')" id="nav-host" class="nav-btn text-xs font-semibold px-4 py-2 rounded-full transition-all text-slate-600 hover:text-slate-900">
+          Host Portal
+        </button>
+      </nav>
+
+      <!-- Right User Menu -->
+      <div class="flex items-center gap-3">
+        <button onclick="switchView('host')" class="hidden sm:inline-flex text-xs font-bold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-full hover:bg-slate-100 transition-colors">
+          Become a Host
+        </button>
+        <div class="flex items-center gap-2 bg-white border border-slate-200 hover:shadow-figma-md rounded-full p-1 pl-3 transition cursor-pointer" onclick="showToast('Account menu opened')">
+          <i data-lucide="menu" class="w-4 h-4 text-slate-600"></i>
+          <div class="w-7 h-7 rounded-full bg-slate-900 text-white font-semibold text-xs flex items-center justify-center">
+            JD
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- VIEW 1: EXPLORE / HOME VIEW -->
+  <main id="view-explore" class="view-panel flex-1">
+    
+    <!-- Full-Bleed Luxury Hero Banner -->
+    <section class="relative w-full bg-slate-950 text-white overflow-hidden py-20 lg:py-28 px-4 sm:px-6 lg:px-8 border-b border-slate-200/80">
+      <div class="absolute inset-0 z-0">
+        <img src="https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=2000&q=80" class="w-full h-full object-cover opacity-35 mix-blend-luminosity scale-105" alt="Luxury Villa">
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
+      </div>
+
+      <div class="relative z-10 max-w-5xl mx-auto text-center space-y-6">
+        <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-emerald-400 text-xs font-semibold tracking-wide uppercase">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-500"></i> Curated Stays & Private Sanctuaries
+        </span>
+        <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight max-w-3xl mx-auto">
+          Find extraordinary places to stay & dwell.
+        </h1>
+        <p class="text-slate-300 text-xs sm:text-base max-w-xl mx-auto font-medium">
+          Hand-picked boutique villas, penthouses, and architectural homes verified for quality.
+        </p>
+
+        <!-- Search Bar Widget -->
+        <div class="pt-4 max-w-3xl mx-auto">
+          <div class="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-full p-2 shadow-2xl border border-white/70 grid grid-cols-1 sm:grid-cols-12 gap-2 text-left text-slate-900">
+            <div class="sm:col-span-4 px-4 py-2 hover:bg-slate-100/80 rounded-xl sm:rounded-full transition cursor-pointer">
+              <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Where</label>
+              <input type="text" id="dest-input" placeholder="Search destinations" class="w-full bg-transparent text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none">
+            </div>
+            <div class="hidden sm:block sm:col-span-1 border-r border-slate-200 h-8 my-auto"></div>
+            <div class="sm:col-span-3 px-4 py-2 hover:bg-slate-100/80 rounded-xl sm:rounded-full transition cursor-pointer">
+              <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Dates</label>
+              <span class="block text-xs font-bold text-slate-900 truncate">Oct 24 – Oct 28</span>
+            </div>
+            <div class="hidden sm:block sm:col-span-1 border-r border-slate-200 h-8 my-auto"></div>
+            <div class="sm:col-span-2 px-4 py-2 hover:bg-slate-100/80 rounded-xl sm:rounded-full transition cursor-pointer">
+              <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Who</label>
+              <select class="w-full bg-transparent text-xs font-bold text-slate-900 focus:outline-none cursor-pointer">
+                <option>2 guests</option>
+                <option>4 guests</option>
+              </select>
+            </div>
+            <div class="sm:col-span-1 flex justify-end">
+              <button onclick="handleSearch()" class="w-full sm:w-11 h-11 bg-slate-900 hover:bg-emerald-600 text-white rounded-xl sm:rounded-full flex items-center justify-center transition duration-200 shadow-md">
+                <i data-lucide="search" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category Filter Bar -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 border-b border-slate-200/80">
+      <div class="flex items-center gap-8 overflow-x-auto no-scrollbar py-2" id="category-bar"></div>
+    </section>
+
+    <!-- Property Listings Grid -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Explore Stays</h2>
+          <p class="text-xs text-slate-600 mt-0.5" id="results-count">Showing verified accommodations</p>
+        </div>
+        <button onclick="showToast('Filters opened')" class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 bg-white px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 shadow-figma-sm transition">
+          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-slate-500"></i>
+          <span>Filters</span>
+        </button>
+      </div>
+
+      <div id="property-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+    </section>
+  </main>
+
+  <!-- VIEW 2: PROPERTY DETAILS VIEW -->
+  <main id="view-details" class="view-panel flex-1 hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <div class="space-y-2 mb-6">
+      <div class="flex items-center gap-2 text-xs font-medium text-slate-600">
+        <a href="#" onclick="switchView('explore')" class="hover:text-slate-900">Stays</a>
+        <span>/</span>
+        <span>Japan</span>
+        <span>/</span>
+        <span class="text-slate-900 font-bold">Kyoto</span>
+      </div>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Aethelgard Glass Residence</h1>
+          <p class="text-xs text-slate-600 mt-1 flex items-center gap-2">
+            <span class="font-bold text-slate-900 flex items-center gap-1"><i data-lucide="star" class="w-3.5 h-3.5 fill-slate-900 text-slate-900"></i> 4.96</span>
+            <span>•</span>
+            <span class="underline">128 reviews</span>
+            <span>•</span>
+            <span>Kyoto, Kansai, Japan</span>
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="showToast('Share link copied')" class="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+            <i data-lucide="share" class="w-3.5 h-3.5"></i> Share
+          </button>
+          <button onclick="showToast('Saved to wishlist')" class="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+            <i data-lucide="heart" class="w-3.5 h-3.5"></i> Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Gallery Matrix -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 rounded-2xl overflow-hidden mb-10">
+      <div class="md:col-span-2 aspect-[4/3] bg-slate-100">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80" class="w-full h-full object-cover" alt="Main Photo">
+      </div>
+      <div class="hidden md:grid grid-cols-1 gap-3">
+        <div class="aspect-[4/3] bg-slate-100">
+          <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover" alt="Photo 2">
+        </div>
+        <div class="aspect-[4/3] bg-slate-100">
+          <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover" alt="Photo 3">
+        </div>
+      </div>
+      <div class="hidden md:grid grid-cols-1 gap-3">
+        <div class="aspect-[4/3] bg-slate-100">
+          <img src="https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover" alt="Photo 4">
+        </div>
+        <div class="aspect-[4/3] bg-slate-100 relative">
+          <img src="https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover" alt="Photo 5">
+          <button onclick="showToast('Opening full gallery')" class="absolute inset-0 bg-slate-900/40 hover:bg-slate-900/50 backdrop-blur-xs flex items-center justify-center text-white font-bold text-xs gap-2 transition-colors">
+            <i data-lucide="grid" class="w-4 h-4"></i> View All Photos
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description & Booking Card Container -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div class="lg:col-span-2 space-y-8">
+        <div class="flex items-center justify-between pb-6 border-b border-slate-200">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Entire villa hosted by Kenji Sato</h2>
+            <p class="text-xs text-slate-600">6 guests • 3 bedrooms • 4 beds • 3 baths</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-sm">
+            KS
+          </div>
+        </div>
+
+        <div class="space-y-4 pb-6 border-b border-slate-200">
+          <div class="flex gap-4">
+            <i data-lucide="award" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+            <div>
+              <h3 class="text-xs font-bold text-slate-900">Superhost</h3>
+              <p class="text-xs text-slate-600">Superhosts are experienced, highly rated hosts committed to providing exceptional stays.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <i data-lucide="wifi" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+            <div>
+              <h3 class="text-xs font-bold text-slate-900">Dedicated Workspace</h3>
+              <p class="text-xs text-slate-600">Fast wifi at 350 Mbps plus a quiet ergonomic studio desk.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 pb-6 border-b border-slate-200">
+          <h2 class="text-base font-bold text-slate-900">About this space</h2>
+          <p class="text-xs leading-relaxed text-slate-600">
+            Nestled on the peaceful hills of Kyoto, the Aethelgard Glass Residence is an architectural masterpiece seamlessly blending Japanese minimalism with contemporary glass design. Enjoy unobstructed panoramic views of cedar forests and traditional gardens while staying minutes away from central temples.
+          </p>
+        </div>
+      </div>
+
+      <!-- Reservation Widget Card -->
+      <div>
+        <div class="sticky top-28 bg-white rounded-2xl p-6 border border-slate-200 shadow-xl space-y-4">
+          <div class="flex items-baseline justify-between">
+            <div>
+              <span class="text-2xl font-extrabold text-slate-900">$340</span>
+              <span class="text-xs text-slate-600"> / night</span>
+            </div>
+            <div class="flex items-center gap-1 text-xs font-bold text-slate-900">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-slate-900 text-slate-900"></i> 4.96
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200">
+            <div class="grid grid-cols-2 divide-x divide-slate-200">
+              <div class="p-3 bg-slate-50">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">CHECK-IN</label>
+                <input type="text" value="Nov 12, 2026" class="w-full bg-transparent font-semibold text-xs text-slate-900 focus:outline-none">
+              </div>
+              <div class="p-3 bg-slate-50">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">CHECKOUT</label>
+                <input type="text" value="Nov 17, 2026" class="w-full bg-transparent font-semibold text-xs text-slate-900 focus:outline-none">
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50">
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">GUESTS</label>
+              <select class="w-full bg-transparent font-semibold text-xs text-slate-900 focus:outline-none">
+                <option>2 Guests</option>
+              </select>
+            </div>
+          </div>
+
+          <button onclick="switchView('bookings'); showToast('Reservation requested!')" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+            Reserve Accommodation
+          </button>
+
+          <div class="space-y-2 pt-2 text-xs text-slate-600">
+            <div class="flex justify-between">
+              <span>$340 × 5 nights</span>
+              <span>$1,700</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Cleaning fee</span>
+              <span>$120</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Stayé service fee</span>
+              <span>$140</span>
+            </div>
+            <div class="pt-3 border-t border-slate-200 flex justify-between font-extrabold text-slate-900 text-sm">
+              <span>Total due</span>
+              <span class="text-emerald-600">$1,960</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 3: MY BOOKINGS DASHBOARD VIEW -->
+  <main id="view-bookings" class="view-panel flex-1 hidden max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-slate-900">Trips & Bookings</h1>
+      <p class="text-xs text-slate-600 mt-1">Manage your upcoming stays and review past itineraries.</p>
+    </div>
+
+    <div class="flex gap-2 border-b border-slate-200 pb-3">
+      <button class="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-bold shadow-sm">Upcoming (2)</button>
+      <button onclick="showToast('Showing past stays')" class="px-4 py-2 rounded-full bg-white text-slate-600 hover:text-slate-900 text-xs font-bold border border-slate-200">Past Stays</button>
+      <button onclick="showToast('Showing cancelled trips')" class="px-4 py-2 rounded-full bg-white text-slate-600 hover:text-slate-900 text-xs font-bold border border-slate-200">Canceled</button>
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm flex flex-col md:flex-row gap-6">
+        <div class="w-full md:w-56 aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 shrink-0">
+          <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover" alt="Booking thumbnail">
+        </div>
+        <div class="flex-1 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">
+                Confirmed
+              </span>
+              <span class="text-xs font-medium text-slate-400">Code: #STAY-9482</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mt-2">Aethelgard Glass Residence</h3>
+            <p class="text-xs text-slate-600">Kyoto, Kansai, Japan</p>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 p-3 bg-slate-50 rounded-xl text-xs">
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase">Dates</span>
+              <span class="font-bold text-slate-800">Nov 12 - Nov 17</span>
+            </div>
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase">Guests</span>
+              <span class="font-bold text-slate-800">2 Adults</span>
+            </div>
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase">Total Paid</span>
+              <span class="font-bold text-emerald-600">$1,960</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 pt-2">
+            <button onclick="switchView('details')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all">
+              View Stay Details
+            </button>
+            <button onclick="showToast('Connecting with host...')" class="px-4 py-2 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-50 transition-all">
+              Contact Host
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 4: HOST PORTAL DASHBOARD VIEW -->
+  <main id="view-host" class="view-panel flex-1 hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold text-slate-900">Host Portal</h1>
+        <p class="text-xs text-slate-600 mt-1">Overview of your property performance, listings, and occupancy rates.</p>
+      </div>
+      <button onclick="showToast('Listing creation wizard triggered')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2">
+        <i data-lucide="plus" class="w-4 h-4"></i> Add New Listing
+      </button>
+    </div>
+
+    <!-- Metrics Breakdown Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Revenue (30d)</span>
+        <div class="text-3xl font-extrabold text-slate-900">$14,820</div>
+        <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +12.4% vs last month
+        </span>
+      </div>
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Properties</span>
+        <div class="text-3xl font-extrabold text-slate-900">4 Villas</div>
+        <span class="text-xs font-medium text-slate-600">100% verified status</span>
+      </div>
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Occupancy Rate</span>
+        <div class="text-3xl font-extrabold text-slate-900">92.4%</div>
+        <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> High demand
+        </span>
+      </div>
+    </div>
+
+    <!-- Host Properties Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
+      <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="font-bold text-slate-900 text-base">Your Active Listings</h2>
+        <span class="text-xs text-slate-600">4 properties published</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 uppercase tracking-wider">
+              <th class="p-4">Property Name</th>
+              <th class="p-4">Location</th>
+              <th class="p-4">Price / Night</th>
+              <th class="p-4">Rating</th>
+              <th class="p-4">Status</th>
+              <th class="p-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="p-4 font-bold text-slate-900 flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=100&q=80" class="w-10 h-10 rounded-lg object-cover" alt="Property thumbnail">
+                Aethelgard Glass Residence
+              </td>
+              <td class="p-4">Kyoto, Japan</td>
+              <td class="p-4 font-bold text-slate-900">$340</td>
+              <td class="p-4 font-bold text-slate-900">★ 4.96</td>
+              <td class="p-4"><span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Booked</span></td>
+              <td class="p-4 text-right"><button onclick="showToast('Editor opened')" class="text-emerald-600 font-bold hover:underline">Edit</button></td>
+            </tr>
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="p-4 font-bold text-slate-900 flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=100&q=80" class="w-10 h-10 rounded-lg object-cover" alt="Property thumbnail">
+                Villa Solstice Luxury Bay
+              </td>
+              <td class="p-4">Santorini, Greece</td>
+              <td class="p-4 font-bold text-slate-900">$520</td>
+              <td class="p-4 font-bold text-slate-900">★ 4.89</td>
+              <td class="p-4"><span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">Available</span></td>
+              <td class="p-4 text-right"><button onclick="showToast('Editor opened')" class="text-emerald-600 font-bold hover:underline">Edit</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER SECTION -->
+  <footer class="bg-slate-950 text-slate-400 py-10 border-t border-slate-800 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-black flex items-center justify-center text-sm">S</div>
+        <span class="text-base font-bold text-white tracking-tight">Stayé<span class="text-emerald-500">.</span></span>
+      </div>
+      <p class="text-xs text-slate-500">© 2026 Stayé Luxury Stays Inc. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- INTERACTIVE LOGIC & CONTROLLERS -->
+  <script>
+    const categories = [
+      { name: 'All', icon: 'sparkles' },
+      { name: 'Amazing views', icon: 'mountain' },
+      { name: 'Beachfront', icon: 'waves' },
+      { name: 'Cabins', icon: 'home' },
+      { name: 'Luxury Villas', icon: 'gem' },
+      { name: 'Urban', icon: 'building-2' },
+      { name: 'Trending', icon: 'flame' }
+    ];
+
+    const properties = [
+      {
+        id: 1,
+        title: "Kuredhivaru Island Villa",
+        category: "Beachfront",
+        location: "Noonu Atoll, Maldives",
+        dates: "Nov 12 – 17",
+        price: 480,
+        rating: 4.96,
+        badge: "Guest favorite",
+        image: "https://images.unsplash.com/photo-1573843981267-be1999ff37cd?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 2,
+        title: "Matterhorn Glass Chalet",
+        category: "Amazing views",
+        location: "Zermatt, Switzerland",
+        dates: "Dec 1 – 6",
+        price: 610,
+        rating: 4.98,
+        badge: "Superhost",
+        image: "https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 3,
+        title: "Oia Sunset Cave Villa",
+        category: "Luxury Villas",
+        location: "Santorini, Greece",
+        dates: "Oct 28 – Nov 2",
+        price: 520,
+        rating: 4.92,
+        badge: "Guest favorite",
+        image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 4,
+        title: "Ubud Bamboo Forest Treehouse",
+        category: "Cabins",
+        location: "Bali, Indonesia",
+        dates: "Nov 5 – 10",
+        price: 290,
+        rating: 4.89,
+        badge: "Rare find",
+        image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80"
+      }
+    ];
+
+    let activeCategory = 'All';
+    let wishlistedIds = new Set();
+
+    function renderCategories() {
+      const bar = document.getElementById('category-bar');
+      bar.innerHTML = categories.map(cat => {
+        const isActive = cat.name === activeCategory;
+        return `
+          <button onclick="setCategory('${cat.name}')" class="flex items-center gap-2 pb-2 border-b-2 ${isActive ? 'border-slate-900 text-slate-900 font-bold' : 'border-transparent text-slate-600 font-medium hover:text-slate-900'} transition whitespace-nowrap text-xs cursor-pointer">
+            <i data-lucide="${cat.icon}" class="w-4 h-4"></i>
+            <span>${cat.name}</span>
+          </button>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function renderProperties(items) {
+      const grid = document.getElementById('property-grid');
+      document.getElementById('results-count').innerText = `Showing ${items.length} verified accommodation(s)`;
+
+      grid.innerHTML = items.map(p => {
+        const isFav = wishlistedIds.has(p.id);
+        return `
+          <div class="group cursor-pointer" onclick="switchView('details')">
+            <div class="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 mb-3">
+              <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out">
+              <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-slate-200/60 text-slate-900 font-bold text-[10px] px-2.5 py-1 rounded-full shadow-figma-sm">
+                ${p.badge}
+              </span>
+              <button onclick="toggleWishlist(event, ${p.id})" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-slate-700 hover:scale-110 transition shadow-figma-sm">
+                <i data-lucide="heart" class="w-4 h-4 ${isFav ? 'fill-coral text-coral' : ''}"></i>
+              </button>
+            </div>
+            <div class="space-y-1 text-xs">
+              <div class="flex items-center justify-between font-bold text-slate-900">
+                <h3 class="truncate pr-2">${p.title}</h3>
+                <div class="flex items-center gap-1 shrink-0">
+                  <i data-lucide="star" class="w-3 h-3 fill-slate-900 text-slate-900"></i>
+                  <span>${p.rating}</span>
+                </div>
+              </div>
+              <p class="text-slate-600">${p.location}</p>
+              <p class="text-slate-400 text-[11px]">${p.dates}</p>
+              <div class="pt-1 text-slate-900">
+                <span class="font-extrabold text-sm">$${p.price}</span>
+                <span class="text-slate-600 font-normal"> night</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function setCategory(catName) {
+      activeCategory = catName;
+      renderCategories();
+      const filtered = catName === 'All' ? properties : properties.filter(p => p.category === catName);
+      renderProperties(filtered);
+    }
+
+    function toggleWishlist(e, id) {
+      e.stopPropagation();
+      if (wishlistedIds.has(id)) {
+        wishlistedIds.delete(id);
+        showToast("Removed from wishlist");
+      } else {
+        wishlistedIds.add(id);
+        showToast("Saved to wishlist");
+      }
+      const activeData = activeCategory === 'All' ? properties : properties.filter(p => p.category === activeCategory);
+      renderProperties(activeData);
+    }
+
+    function switchView(viewName) {
+      document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
+      document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+        btn.classList.add('text-slate-600');
+      });
+
+      const activeNav = document.getElementById(`nav-${viewName}`);
+      if (activeNav) {
+        activeNav.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+        activeNav.classList.remove('text-slate-600');
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function handleSearch() {
+      const q = document.getElementById('dest-input').value.toLowerCase().trim();
+      if (!q) { renderProperties(properties); return; }
+      const res = properties.filter(p => p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q));
+      renderProperties(res);
+      showToast(`Found ${res.length} matching stay(s)`);
+    }
+
+    function showToast(msg) {
+      const wrapper = document.getElementById('toast-wrapper');
+      const toast = document.createElement('div');
+      toast.className = "bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-figma-lg flex items-center gap-2 transform translate-y-2 opacity-0 transition-all duration-200";
+      toast.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i><span>${msg}</span>`;
+      wrapper.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 200);
+      }, 2500);
+    }
+
+    window.onload = function() {
+      renderCategories();
+      renderProperties(properties);
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>

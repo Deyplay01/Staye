@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Check, Clock3, Flag, Search, ShieldAlert, ShieldCheck, UserRound, X } from "lucide-react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import EmptyState from "../../components/common/EmptyState";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import SkeletonBlock from "../../components/common/SkeletonBlock";
+import FiltersDialog from "../../components/common/FiltersDialog";
 import { getImageUrl } from "../../api";
 import { fetchListingsForReview, fetchManagedUsers, fetchUserModerationHistory, reviewListing, setUserBlocked, setUserFlag } from "../../api/admin";
 
@@ -203,6 +204,11 @@ export default function SuperAdminPage() {
     setFilters((current) => ({ ...current, [field]: value }));
   }
 
+  function resetFilters() {
+    setPage(1);
+    setFilters({ search: "", role: "", status: "" });
+  }
+
   return (
     <AdminLayout>
       <div className="mx-auto max-w-6xl">
@@ -225,7 +231,7 @@ export default function SuperAdminPage() {
             </div>
             <span className="rounded-full bg-accent px-3 py-1 text-sm font-semibold text-navy-900">{listings.length} pending</span>
           </div>
-          {listingLoading ? <LoadingSpinner label="Loading listings for review..." /> : listings.length === 0 ? (
+          {listingLoading ? <div className="grid gap-4 md:grid-cols-2" aria-label="Loading listings for review" aria-busy="true">{Array.from({ length: 4 }, (_, index) => <article key={index} className="space-y-4 rounded-2xl border border-ink-300 bg-white p-5 shadow-card"><div className="flex items-start justify-between gap-3"><div className="flex-1 space-y-2"><SkeletonBlock className="h-6 w-2/3" /><SkeletonBlock className="h-4 w-1/3" /><SkeletonBlock className="h-3 w-1/2" /></div><SkeletonBlock className="h-6 w-20 rounded-full" /></div><SkeletonBlock className="h-20 w-full" /><SkeletonBlock className="h-32 w-full rounded-xl" /><SkeletonBlock className="h-9 w-32 rounded-xl" /></article>)}</div> : listings.length === 0 ? (
             <EmptyState title="No listings to review" description="New host listings will appear here." />
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -239,7 +245,7 @@ export default function SuperAdminPage() {
                         Host: {listing.hostId?.name || "Unknown"}{listing.hostId?.email ? ` · ${listing.hostId.email}` : ""}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">Pending</span>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Pending</span>
                   </div>
                   <p className="mt-4 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-ink-700">{listing.description}</p>
                   {!!listing.images?.length && (
@@ -287,37 +293,37 @@ export default function SuperAdminPage() {
             <h2 id="accounts-heading" className="text-xl font-bold text-navy-900">Guest and host accounts</h2>
             <p className="mt-1 text-sm text-ink-500">Flags identify accounts needing attention; blocks prevent further authenticated access.</p>
           </div>
-          <div className="mb-4 grid gap-3 rounded-2xl border border-ink-300 bg-white p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
-            <label className="relative sm:col-span-2 lg:col-span-2">
-              <span className="sr-only">Search accounts</span>
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" aria-hidden="true" />
-              <input
-                value={filters.search}
-                onChange={(event) => updateFilter("search", event.target.value)}
-                placeholder="Search name or email"
-                className="min-h-11 w-full rounded-xl border border-ink-300 pl-9 pr-3 text-sm outline-none focus:border-brand"
-              />
-            </label>
-            <label>
-              <span className="sr-only">Filter by role</span>
-              <select value={filters.role} onChange={(event) => updateFilter("role", event.target.value)} className="min-h-11 w-full rounded-xl border border-ink-300 bg-white px-3 text-sm">
-                <option value="">All roles</option>
-                <option value="guest">Guests</option>
-                <option value="host">Hosts</option>
-                <option value="admin">Super admins</option>
-              </select>
-            </label>
-            <label>
-              <span className="sr-only">Filter by status</span>
-              <select value={filters.status} onChange={(event) => updateFilter("status", event.target.value)} className="min-h-11 w-full rounded-xl border border-ink-300 bg-white px-3 text-sm">
-                <option value="">All statuses</option>
-                <option value="active">Active</option>
-                <option value="blocked">Blocked</option>
-              </select>
-            </label>
+          <div className="mb-4 flex justify-end">
+            <FiltersDialog
+              title="Filter accounts"
+              description="Search accounts and narrow by role or status."
+              activeCount={[filters.search, filters.role, filters.status].filter(Boolean).length}
+              resultCount={users.length}
+              onReset={resetFilters}
+            >
+              <label className="block text-xs font-semibold text-ink-500 sm:col-span-2">
+                Search accounts
+                <span className="relative mt-1 block">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" aria-hidden="true" />
+                  <input value={filters.search} onChange={(event) => updateFilter("search", event.target.value)} placeholder="Search name or email" className="min-h-11 w-full rounded-xl border border-ink-300 pl-9 pr-3 text-sm font-normal text-ink-900 outline-none focus:border-brand" />
+                </span>
+              </label>
+              <label className="block text-xs font-semibold text-ink-500">
+                Role
+                <select value={filters.role} onChange={(event) => updateFilter("role", event.target.value)} className="mt-1 block min-h-11 w-full rounded-xl border border-ink-300 bg-white px-3 text-sm font-normal text-ink-900">
+                  <option value="">All roles</option><option value="guest">Guests</option><option value="host">Hosts</option><option value="admin">Super admins</option>
+                </select>
+              </label>
+              <label className="block text-xs font-semibold text-ink-500">
+                Status
+                <select value={filters.status} onChange={(event) => updateFilter("status", event.target.value)} className="mt-1 block min-h-11 w-full rounded-xl border border-ink-300 bg-white px-3 text-sm font-normal text-ink-900">
+                  <option value="">All statuses</option><option value="active">Active</option><option value="blocked">Blocked</option>
+                </select>
+              </label>
+            </FiltersDialog>
           </div>
 
-          {userLoading ? <LoadingSpinner label="Loading accounts..." /> : users.length === 0 ? (
+          {userLoading ? <div className="space-y-3" aria-label="Loading accounts" aria-busy="true">{Array.from({ length: 5 }, (_, index) => <article key={index} className="flex items-start gap-3 rounded-2xl border border-ink-300 bg-white p-4 shadow-card sm:p-5"><SkeletonBlock className="h-10 w-10 shrink-0 rounded-full" /><div className="flex-1 space-y-2"><SkeletonBlock className="h-5 w-1/3" /><SkeletonBlock className="h-4 w-1/2" /><SkeletonBlock className="h-6 w-32 rounded-full" /></div></article>)}</div> : users.length === 0 ? (
             <EmptyState title="No matching accounts" description="Try changing the role, status, or search filters." />
           ) : (
             <div className="space-y-3">
@@ -332,8 +338,8 @@ export default function SuperAdminPage() {
                         <h3 className="break-words font-semibold text-navy-900">{user.name}</h3>
                         <p className="break-all text-sm text-ink-500">{user.email}</p>
                         <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1 font-medium capitalize text-ink-700">{user.role || "guest"}</span>
-                          <span className={`rounded-full px-2.5 py-1 font-medium ${user.status === "blocked" ? "bg-red-50 text-danger" : user.isFlagged ? "bg-amber-50 text-amber-800" : "bg-green-50 text-green-800"}`}>
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium capitalize text-ink-700">{user.role || "guest"}</span>
+                          <span className={`rounded-full px-2.5 py-1 font-medium ${user.status === "blocked" ? "bg-red-50 text-danger" : user.isFlagged ? "bg-slate-100 text-slate-700" : "bg-slate-100 text-slate-700"}`}>
                             {statusLabel(user)}
                           </span>
                         </div>
@@ -350,7 +356,7 @@ export default function SuperAdminPage() {
                           type="button"
                           disabled={!!activeAction}
                           onClick={() => handleHistory(user._id)}
-                          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-ink-300 px-3 py-2 text-sm font-medium text-ink-700 hover:bg-gray-50 disabled:opacity-50"
+                          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-ink-300 px-3 py-2 text-sm font-medium text-ink-700 hover:bg-slate-50 disabled:opacity-50"
                         >
                           <Clock3 className="h-4 w-4" aria-hidden="true" /> {historyUserId === user._id ? "Hide history" : "History"}
                         </button>
@@ -358,7 +364,7 @@ export default function SuperAdminPage() {
                           type="button"
                           disabled={!!activeAction}
                           onClick={() => requestFlag(user)}
-                          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-ink-300 px-3 py-2 text-sm font-medium text-ink-700 hover:bg-gray-50 disabled:opacity-50"
+                          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-ink-300 px-3 py-2 text-sm font-medium text-ink-700 hover:bg-slate-50 disabled:opacity-50"
                         >
                           <Flag className="h-4 w-4" aria-hidden="true" /> {user.isFlagged ? "Clear flag" : "Flag"}
                         </button>
@@ -366,7 +372,7 @@ export default function SuperAdminPage() {
                           type="button"
                           disabled={!!activeAction}
                           onClick={() => requestBlock(user)}
-                          className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold disabled:opacity-50 ${user.status === "blocked" ? "border border-ink-300 text-ink-700 hover:bg-gray-50" : "bg-danger text-white hover:bg-red-700"}`}
+                          className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold disabled:opacity-50 ${user.status === "blocked" ? "border border-ink-300 text-ink-700 hover:bg-slate-50" : "bg-danger text-white hover:bg-red-700"}`}
                         >
                           {user.status === "blocked" ? <ShieldCheck className="h-4 w-4" aria-hidden="true" /> : <ShieldAlert className="h-4 w-4" aria-hidden="true" />}
                           {user.status === "blocked" ? "Unblock" : "Block"}
@@ -383,7 +389,7 @@ export default function SuperAdminPage() {
                       ) : (
                         <ul className="mt-2 space-y-2">
                           {history.map((entry) => (
-                            <li key={entry._id} className="rounded-xl bg-gray-50 px-3 py-2 text-sm">
+                            <li key={entry._id} className="rounded-xl bg-slate-50 px-3 py-2 text-sm">
                               <p className="font-medium capitalize text-ink-800">{entry.action}</p>
                               <p className="mt-1 break-words text-xs text-ink-500">
                                 {entry.reason || "No reason recorded"} · {entry.actorUserId?.name || "Admin"} · {new Date(entry.createdAt).toLocaleString()}
@@ -471,7 +477,7 @@ export default function SuperAdminPage() {
                   type="button"
                   disabled={!!activeAction}
                   onClick={() => setPendingAction(null)}
-                  className="min-h-11 rounded-xl border border-ink-300 px-4 text-sm font-semibold text-ink-700 hover:bg-gray-50"
+                  className="min-h-11 rounded-xl border border-ink-300 px-4 text-sm font-semibold text-ink-700 hover:bg-slate-50"
                 >
                   Cancel
                 </button>

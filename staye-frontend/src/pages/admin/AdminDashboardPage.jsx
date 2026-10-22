@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import StatCard from "../../components/admin/StatCard";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import SkeletonBlock from "../../components/common/SkeletonBlock";
+import FiltersDialog from "../../components/common/FiltersDialog";
 import { fetchMyListings } from "../../api/listings";
 import { fetchAdminBookings, fetchBookingDashboard } from "../../api/bookings";
 import { formatPrice } from "../../utils/price";
@@ -127,32 +128,20 @@ export default function AdminDashboardPage() {
             A clear view of your spaces, stays, and momentum.
           </p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="text-xs font-semibold text-ink-500">
-            Revenue period
-            <select
-              value={period}
-              onChange={handlePeriodChange}
-              className="mt-1 block rounded-xl border border-ink-300 bg-white px-3 py-2 text-sm font-medium text-ink-900"
-            >
-              <option value="all">All time</option>
-              <option value="month">By month</option>
-              <option value="week">By week</option>
-              <option value="day">By day</option>
+        <FiltersDialog title="Revenue period" description="Choose the reporting window for your dashboard." activeCount={period === "all" ? 0 : 1}>
+          <label className="block text-xs font-semibold text-ink-500">
+            Period
+            <select value={period} onChange={handlePeriodChange} className="mt-1 block w-full rounded-xl border border-ink-300 bg-white px-3 py-2.5 text-sm font-normal text-ink-900">
+              <option value="all">All time</option><option value="month">By month</option><option value="week">By week</option><option value="day">By day</option>
             </select>
           </label>
           {period !== "all" && (
-            <label className="text-xs font-semibold text-ink-500">
+            <label className="block text-xs font-semibold text-ink-500">
               Period date
-              <input
-                type={period === "month" ? "month" : "date"}
-                value={periodValue}
-                onChange={(event) => setPeriodValue(event.target.value)}
-                className="mt-1 block rounded-xl border border-ink-300 bg-white px-3 py-2 text-sm font-medium text-ink-900"
-              />
+              <input type={period === "month" ? "month" : "date"} value={periodValue} onChange={(event) => setPeriodValue(event.target.value)} className="mt-1 block w-full rounded-xl border border-ink-300 bg-white px-3 py-2.5 text-sm font-normal text-ink-900" />
             </label>
           )}
-        </div>
+        </FiltersDialog>
       </div>
 
       {error && (
@@ -162,7 +151,22 @@ export default function AdminDashboardPage() {
       )}
 
       {isLoading ? (
-        <LoadingSpinner label="Loading dashboard..." />
+        <div className="space-y-6" aria-label="Loading dashboard" aria-busy="true">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => <div key={index} className="space-y-4 rounded-2xl border border-ink-300 bg-white p-5 shadow-card"><SkeletonBlock className="h-5 w-5 rounded-full" /><SkeletonBlock className="h-4 w-2/3" /><SkeletonBlock className="h-8 w-1/3" /></div>)}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }, (_, index) => <div key={index} className="space-y-4 rounded-2xl border border-ink-300 bg-white p-5 shadow-card"><SkeletonBlock className="h-5 w-5 rounded-full" /><SkeletonBlock className="h-4 w-2/3" /><SkeletonBlock className="h-8 w-1/3" /></div>)}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SkeletonBlock className="h-56 w-full rounded-2xl" />
+            <SkeletonBlock className="h-56 w-full rounded-2xl" />
+          </div>
+          <div className="space-y-3 rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
+            <SkeletonBlock className="h-6 w-1/3" />
+            {Array.from({ length: 3 }, (_, index) => <SkeletonBlock key={index} className="h-14 w-full rounded-xl" />)}
+          </div>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -227,7 +231,7 @@ export default function AdminDashboardPage() {
                 <h2 className="font-bold text-ink-900">Room availability</h2>
                 <Link
                   to="/admin/listings"
-                  className="text-xs font-semibold text-brand hover:text-brand-hover"
+                  className="text-xs font-semibold text-slate-700 hover:text-slate-900"
                 >
                   Manage rooms
                 </Link>

@@ -146,14 +146,14 @@ export default function ListingRoomsPanel({ listing, onSave }) {
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         {rooms.map((room, index) => (
-          <article key={room._id || `${room.name}-${index}`} className="rounded-xl border border-ink-300 bg-gray-50 p-4">
+          <article key={room._id || `${room.name}-${index}`} className="rounded-xl border border-ink-300 bg-slate-50 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-bold text-ink-900">{room.name}</h3>
                 <p className="mt-1 text-sm text-ink-600">{room.description || "No room description"}</p>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => startEdit(index)} disabled={editingIndex !== null} className="text-brand hover:text-brand-hover" aria-label={`Edit ${room.name}`}>
+                <button type="button" onClick={() => startEdit(index)} disabled={editingIndex !== null} className="text-slate-700 hover:text-slate-900" aria-label={`Edit ${room.name}`}>
                   <Pencil className="h-4 w-4" aria-hidden="true" />
                 </button>
                 <button type="button" onClick={() => removeRoom(index)} disabled={editingIndex !== null} className="text-danger hover:opacity-80" aria-label={`Remove ${room.name}`}>
@@ -173,7 +173,7 @@ export default function ListingRoomsPanel({ listing, onSave }) {
       {!rooms.length && <p className="mt-4 text-sm text-danger">This listing needs at least one room category.</p>}
 
       {editingIndex !== null && (
-        <form onSubmit={saveDraft} className="mt-5 rounded-xl border border-brand bg-brand-light/30 p-4">
+        <form onSubmit={saveDraft} className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-bold text-ink-900">{editingIndex === -1 ? "Add room category" : "Edit room category"}</h3>
             <button type="button" onClick={cancelEdit} aria-label="Cancel room edit" className="text-ink-500 hover:text-ink-900">

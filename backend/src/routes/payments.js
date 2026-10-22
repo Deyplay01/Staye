@@ -38,6 +38,9 @@ router.post("/initialize", authMiddleware, async (req, res) => {
         if (!booking) return res.status(404).json({ message: "Booking not found." });
         if (booking.status === "cancelled") return res.status(400).json({ message: "Cancelled bookings cannot be paid for." });
         if (booking.paymentStatus === "paid") return res.status(400).json({ message: "Booking is already paid." });
+        if (!/^STY-[A-F0-9]{18}$/i.test(booking.publicReference || "")) {
+            return res.status(409).json({ message: "This booking is missing its public reference. Please contact support before paying." });
+        }
 
         const user = await User.findById(req.user.userId).select("email");
         if (!user) return res.status(404).json({ message: "User not found." });
@@ -48,7 +51,7 @@ router.post("/initialize", authMiddleware, async (req, res) => {
         }
 
         const currency = (process.env.PAYSTACK_CURRENCY || "NGN").toUpperCase();
-        const reference = `booking_${booking._id}_${Date.now()}`;
+        const reference = booking.publicReference;
         const callbackUrl = resolvePaymentCallbackUrl({
             callbackUrl: process.env.PAYSTACK_CALLBACK_URL,
             frontendUrl: process.env.FRONTEND_URL,

@@ -65,7 +65,7 @@ export default function BookingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <LoadingSpinner label="Preparing your booking..." />
       </div>
@@ -74,7 +74,7 @@ export default function BookingPage() {
 
   if (!listing || !checkIn || !checkOut) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="mx-auto max-w-3xl px-4 py-16">
           <EmptyState
@@ -92,7 +92,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
         <div className="mb-5 flex items-center justify-between gap-3">
