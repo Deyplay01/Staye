@@ -173,7 +173,7 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
             <span className="mb-1 block text-sm font-medium text-ink-700">
               Listing images <span className="font-normal text-ink-500">(images only, up to 10)</span>
             </span>
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#96BE8C] bg-[#C9F2C7]/40 px-4 py-4 text-sm font-semibold text-[#243119] hover:bg-[#C9F2C7]">
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#CBD5E1] bg-slate-50 px-4 py-4 text-sm font-semibold text-[#0F172A] hover:bg-slate-100">
               <ImagePlus className="h-5 w-5" aria-hidden="true" />
               {isUploading ? "Uploading images..." : "Choose image files"}
               <input
@@ -189,12 +189,12 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
             {form.images.length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
                 {form.images.map((imageUrl) => (
-                  <div key={imageUrl} className="group relative aspect-square overflow-hidden rounded-xl border border-ink-300 bg-[#C9F2C7]">
+                  <div key={imageUrl} className="group relative aspect-square overflow-hidden rounded-xl border border-ink-300 bg-slate-100">
                     <img src={imageUrl} alt="Listing preview" className="h-full w-full object-cover" />
                     <button
                       type="button"
                       onClick={() => setForm((prev) => ({ ...prev, images: prev.images.filter((image) => image !== imageUrl) }))}
-                      className="absolute right-1 top-1 rounded-full bg-[#243119]/85 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                      className="absolute right-1 top-1 rounded-full bg-[#0F172A]/85 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
                       aria-label="Remove image"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -226,7 +226,7 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
             </div>
 
             {form.rooms.map((room, index) => (
-              <div key={`${room.name || "new-room"}-${index}`} className="rounded-xl border border-ink-300 bg-gray-50 p-4">
+              <div key={`${room.name || "new-room"}-${index}`} className="rounded-xl border border-ink-300 bg-slate-50 p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="font-semibold text-ink-900">Room {index + 1}</p>
                   {form.rooms.length > 1 && (

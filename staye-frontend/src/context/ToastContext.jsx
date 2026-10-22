@@ -7,8 +7,8 @@ const TOAST_DURATION_MS = 6000;
 const TOAST_STYLES = {
   success: {
     icon: CheckCircle2,
-    iconClassName: "text-emerald-700",
-    borderClassName: "border-emerald-200",
+    iconClassName: "text-success",
+    borderClassName: "border-slate-200",
   },
   error: {
     icon: AlertCircle,

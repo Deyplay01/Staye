@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Save, UserRound } from "lucide-react";
+import { MapPin, Save, UserRound } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import SkeletonBlock from "../../components/common/SkeletonBlock";
 import Button from "../../components/common/Button";
+import HomeIconLink from "../../components/common/HomeIconLink";
 import { fetchProfile, updateProfile } from "../../api/auth";
 import { getImageUrl, uploadImages } from "../../api";
 import { useAuth } from "../../context/AuthContext";
@@ -101,7 +101,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f8f2]">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar />
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-8 sm:py-10">
         <div className="mb-7 flex items-center justify-between gap-3">
@@ -111,15 +111,28 @@ export default function ProfilePage() {
               Profile
             </h1>
           </div>
-          <Link to="/" className="shrink-0">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Home
-            </Button>
-          </Link>
+          <HomeIconLink />
         </div>
 
         {isLoading ? (
-          <LoadingSpinner label="Loading your profile..." />
+          <div className="grid gap-6 lg:grid-cols-[240px_1fr]" aria-label="Loading profile" aria-busy="true">
+            <div className="rounded-2xl border border-ink-300 bg-white p-6 shadow-card">
+              <SkeletonBlock className="mx-auto h-24 w-24 rounded-full" />
+              <SkeletonBlock className="mx-auto mt-4 h-5 w-2/3" />
+              <SkeletonBlock className="mx-auto mt-2 h-4 w-5/6" />
+              <SkeletonBlock className="mx-auto mt-4 h-4 w-1/2" />
+            </div>
+            <div className="space-y-5 rounded-2xl border border-ink-300 bg-white p-5 shadow-card sm:p-6">
+              <div className="space-y-2 border-b border-ink-300 pb-5">
+                <SkeletonBlock className="h-6 w-1/3" />
+                <SkeletonBlock className="h-4 w-2/3" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {Array.from({ length: 5 }, (_, index) => <SkeletonBlock key={index} className="h-12 w-full rounded-xl" />)}
+              </div>
+              <SkeletonBlock className="h-11 w-32 rounded-xl" />
+            </div>
+          </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
             <aside className="h-fit rounded-2xl border border-ink-300 bg-white p-6 text-center shadow-card">
@@ -131,7 +144,7 @@ export default function ProfilePage() {
                   className="mx-auto h-24 w-24 rounded-full object-cover"
                 />
               ) : (
-                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#C9F2C7] text-2xl font-bold text-[#243119]">
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 text-2xl font-bold text-[#0F172A]">
                   {initials}
                 </div>
               )}
@@ -162,12 +175,12 @@ export default function ProfilePage() {
                 </p>
               </div>
               {error && (
-                <p className="mb-4 rounded-xl bg-[#C9F2C7] px-3 py-2 text-sm text-[#243119]">
+                <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-sm text-[#0F172A]">
                   {error}
                 </p>
               )}
               {message && (
-                <p className="mb-4 rounded-xl bg-[#C9F2C7] px-3 py-2 text-sm text-[#243119]">
+                <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-sm text-[#0F172A]">
                   {message}
                 </p>
               )}
@@ -237,7 +250,7 @@ export default function ProfilePage() {
                 <span className="mb-1.5 block text-sm font-semibold text-ink-700">
                   Profile photo
                 </span>
-                <label className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#96BE8C] bg-[#C9F2C7]/40 px-3 py-3 text-sm font-semibold text-[#243119] hover:bg-[#C9F2C7]">
+                <label className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#CBD5E1] bg-slate-50 px-3 py-3 text-sm font-semibold text-[#0F172A] hover:bg-slate-100">
                   <UserRound className="mr-2 h-4 w-4" aria-hidden="true" />
                   {isUploadingAvatar ? "Uploading photo..." : "Choose an image"}
                   <input

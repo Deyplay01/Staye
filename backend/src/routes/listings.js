@@ -224,12 +224,13 @@ router.get("/:id", async (req, res) => {
             return res.status(400).json({ message: "Invalid listing ID." });
         }
         const listing = await Listing.findOne({ _id: req.params.id, status: "approved" })
-            .populate({ path: "hostId", match: { status: { $ne: "blocked" } }, select: "_id" });
+            .populate({ path: "hostId", match: { status: { $ne: "blocked" } }, select: "_id name" });
         if (!listing || !listing.hostId) {
             return res.status(404).json({ message: "Listing not found" });
         }
+        const hostName = listing.hostId.name;
         const [enrichedListing] = await enrichListings([listing]);
-        res.json(enrichedListing);
+        res.json({ ...enrichedListing, hostName });
     } catch (error) {
         console.error("Error fetching listing:", error);
         res.status(500).json({ message: "Error fetching listing" });

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import EmptyState from "../../components/common/EmptyState";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import SkeletonBlock from "../../components/common/SkeletonBlock";
 import Button from "../../components/common/Button";
 import {
   fetchNotifications,
@@ -91,7 +91,9 @@ export default function AdminNotificationsPage() {
           </p>
         )}
         {isLoading ? (
-          <LoadingSpinner label="Loading admin notifications..." />
+          <div className="space-y-3" aria-label="Loading notifications" aria-busy="true">
+            {Array.from({ length: 4 }, (_, index) => <div key={index} className="flex items-start gap-4 rounded-2xl border border-ink-300 bg-white p-5 shadow-card"><SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" /><div className="flex-1 space-y-2"><SkeletonBlock className="h-5 w-1/2" /><SkeletonBlock className="h-4 w-full" /><SkeletonBlock className="h-3 w-1/4" /></div></div>)}
+          </div>
         ) : notifications.length === 0 ? (
           <EmptyState
             title="You are all caught up"

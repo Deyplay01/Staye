@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, X, UserCog, LogOut, CalendarCheck2, Home, LayoutDashboard, UserRound, Building2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { fetchProfile } from "../../api/auth";
 import { getImageUrl } from "../../api";
+import BrandLogo from "../common/BrandLogo";
 import NotificationBell from "../common/NotificationBell";
 
 export default function Navbar() {
@@ -11,6 +12,7 @@ export default function Navbar() {
   const [desktopMenu, setDesktopMenu] = useState(null);
   const desktopMenuRef = useRef(null);
   const { isAuthenticated, user, logout, isHost, isSuperAdmin } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState(user?.avatar || "");
   const initials = (user?.name || "Guest")
@@ -19,6 +21,10 @@ export default function Navbar() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const isListingDetails = /^\/listings\/[^/]+$/.test(location.pathname);
+  const primaryLinkClass = "rounded-full px-4 py-2 text-xs font-semibold transition-colors";
+  const activePrimaryLinkClass = "bg-white text-slate-900 shadow-sm";
+  const inactivePrimaryLinkClass = "text-slate-600 hover:text-slate-900";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -55,83 +61,76 @@ export default function Navbar() {
 
   return (
     <>
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-ink-300/80 bg-white/90 lg:backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-        <Link to="/" className="flex items-center text-lg gap-2 font-bold tracking-tight text-navy-950">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#C9F2C7] text-sm font-bold text-[#243119]">S</span>
-          <span className="text-2xl font-bold tracking-tight">Stayé</span>
-        </Link>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+      <div className="relative mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+        <BrandLogo />
 
-        <nav ref={desktopMenuRef} className="hidden items-center gap-6 sm:flex">
-          <Link to="/listings" className="text-sm font-medium text-ink-700 hover:text-brand">
-            Browse listings
+        <nav aria-label="Primary navigation" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-full border border-slate-200/60 bg-slate-100/80 p-1.5 md:flex">
+          <Link to="/listings" aria-current={location.pathname === "/listings" ? "page" : undefined} className={`${primaryLinkClass} ${location.pathname === "/listings" ? activePrimaryLinkClass : inactivePrimaryLinkClass}`}>
+            Explore
           </Link>
-
-          {isAuthenticated ? (
-            <div className="relative flex items-center gap-3">
-              <NotificationBell />
-              <button
-                type="button"
-                onClick={() => setDesktopMenu(desktopMenu === "account" ? null : "account")}
-                aria-expanded={desktopMenu === "account"}
-                className="flex items-center gap-2 rounded-full border border-ink-300 px-3 py-1.5 text-sm font-medium text-ink-700 hover:border-brand hover:text-brand"
-              >
-                {avatar ? <img src={getImageUrl(avatar)} alt="" onError={() => setAvatar("")} className="h-7 w-7 rounded-full object-cover" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C9F2C7] text-xs font-bold text-[#243119]">{initials}</span>}
-                <span>Hi, {user?.name?.split(" ")[0]}</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${desktopMenu === "account" ? "rotate-180" : ""}`} aria-hidden="true" />
-              </button>
-              {desktopMenu === "account" && (
-                <div className="absolute right-0 top-full mt-3 w-56 rounded-2xl border border-ink-300 bg-white p-2 shadow-popover">
-                  <Link to="/dashboard" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Dashboard</Link>
-                  <Link to="/my-bookings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><CalendarCheck2 className="h-4 w-4" aria-hidden="true" /> My bookings</Link>
-                  <Link to="/profile" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><UserRound className="h-4 w-4" aria-hidden="true" /> Profile</Link>
-                  <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-ink-700 hover:bg-brand-light"><LogOut className="h-4 w-4" aria-hidden="true" /> Log out</button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <Link to="/login" className="text-sm font-medium text-ink-700 hover:text-brand">
-                Log in
-              </Link>
-              <Link
-                to="/register"
-                className="rounded-full bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800"
-              >
-                Sign up
-              </Link>
-            </>
-          )}
-
-          {isHost ? (
-            <div className="relative border-l border-ink-300 pl-5">
-              <button type="button" onClick={() => setDesktopMenu(desktopMenu === "admin" ? null : "admin")} aria-expanded={desktopMenu === "admin"} className="flex items-center gap-1.5 text-sm font-medium text-ink-500 hover:text-brand">
-                <Building2 className="h-4 w-4" aria-hidden="true" /> {isSuperAdmin ? "Admin console" : "Host workspace"} <ChevronDown className={`h-4 w-4 transition-transform ${desktopMenu === "admin" ? "rotate-180" : ""}`} aria-hidden="true" />
-              </button>
-              {desktopMenu === "admin" && (
-                <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-ink-300 bg-white p-2 shadow-popover">
-                  <Link to="/admin/dashboard" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Dashboard</Link>
-                  <Link to="/admin/listings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><Building2 className="h-4 w-4" aria-hidden="true" /> Listings</Link>
-                  <Link to="/admin/bookings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><CalendarCheck2 className="h-4 w-4" aria-hidden="true" /> Bookings</Link>
-                  {isSuperAdmin && <Link to="/admin/users" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-700 hover:bg-brand-light"><UserCog className="h-4 w-4" aria-hidden="true" /> Trust &amp; safety</Link>}
-                </div>
-              )}
-            </div>
-          ) : (
-            <Link
-              to="/admin/login"
-              className="flex items-center gap-1.5 border-l border-ink-300 pl-6 text-sm font-medium text-ink-500 hover:text-brand"
-            >
-              <UserCog className="h-4 w-4" aria-hidden="true" />
-              Host login
+          {isListingDetails && (
+            <Link to={`${location.pathname}${location.search}`} aria-current="page" className={`${primaryLinkClass} ${activePrimaryLinkClass}`}>
+              Property Details
             </Link>
           )}
+          <Link to="/my-bookings" aria-current={location.pathname === "/my-bookings" ? "page" : undefined} className={`${primaryLinkClass} ${location.pathname === "/my-bookings" ? activePrimaryLinkClass : inactivePrimaryLinkClass}`}>
+            My Bookings
+          </Link>
+          {isHost && (
+            <Link to="/admin/dashboard" aria-current={location.pathname.startsWith("/admin") ? "page" : undefined} className={`${primaryLinkClass} ${location.pathname.startsWith("/admin") ? activePrimaryLinkClass : inactivePrimaryLinkClass}`}>
+              {isSuperAdmin ? "Admin Console" : "Host Portal"}
+            </Link>
+          )}
+        </nav>
+
+        <nav ref={desktopMenuRef} className="hidden items-center gap-6 sm:flex">
+          <div className="relative flex items-center gap-3">
+            {isAuthenticated && <NotificationBell />}
+            <button
+              type="button"
+              onClick={() => setDesktopMenu(desktopMenu === "account" ? null : "account")}
+              aria-expanded={desktopMenu === "account"}
+              aria-label="Open account menu"
+              className="flex items-center gap-2 rounded-full border border-slate-200 p-1.5 pl-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:shadow-md"
+            >
+              <Menu className="h-4 w-4" aria-hidden="true" />
+              {avatar ? <img src={getImageUrl(avatar)} alt="" onError={() => setAvatar("")} className="h-8 w-8 rounded-full object-cover" /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">{initials}</span>}
+            </button>
+            {desktopMenu === "account" && (
+              <div className="absolute right-0 top-full mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
+                {isAuthenticated ? (
+                  <>
+                    <Link to="/dashboard" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"><LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Dashboard</Link>
+                    <Link to="/profile" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"><UserRound className="h-4 w-4" aria-hidden="true" /> Profile</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100">Log in</Link>
+                    <Link to="/register" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100">Sign up</Link>
+                  </>
+                )}
+                {isHost ? (
+                  <>
+                    <div className="my-2 border-t border-slate-200" />
+                    <Link to="/admin/dashboard" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"><Building2 className="h-4 w-4" aria-hidden="true" /> {isSuperAdmin ? "Admin console" : "Host portal"}</Link>
+                    <Link to="/admin/listings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"><Building2 className="h-4 w-4" aria-hidden="true" /> Host listings</Link>
+                    <Link to="/admin/bookings" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"><CalendarCheck2 className="h-4 w-4" aria-hidden="true" /> Host bookings</Link>
+                    {isSuperAdmin && <Link to="/admin/users" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"><UserCog className="h-4 w-4" aria-hidden="true" /> Trust &amp; safety</Link>}
+                  </>
+                ) : (
+                  <Link to="/admin/login" onClick={() => setDesktopMenu(null)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"><UserCog className="h-4 w-4" aria-hidden="true" /> Host login</Link>
+                )}
+                {isAuthenticated && <button type="button" onClick={handleLogout} className="mt-2 flex w-full items-center gap-3 border-t border-slate-200 px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-100"><LogOut className="h-4 w-4" aria-hidden="true" /> Log out</button>}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="flex items-center gap-3 sm:hidden">
           {isAuthenticated && <NotificationBell />}
           <button
-            className="text-navy-900"
+            className="text-slate-900"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "Close menu" : "Open menu"}
           >
@@ -141,74 +140,64 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="absolute inset-x-0 top-full min-h-[calc(100vh-73px)] space-y-1 border-t border-white/60 bg-white/75 px-5 pb-6 pt-5 shadow-popover backdrop-blur-xl sm:hidden">
-          <div className="mb-5 rounded-2xl border border-white/80 bg-white/60 p-4 text-sm text-navy-900">
-            <p className="font-semibold">Find your next stay</p>
-            <p className="mt-1 text-xs text-ink-500">Thoughtful spaces, ready when you are.</p>
+        <div className="absolute inset-x-0 top-full h-[calc(100vh-73px)] overflow-y-auto overscroll-contain border-t border-slate-200 bg-white/95 px-5 shadow-lg backdrop-blur-xl sm:hidden">
+          <div className="mx-auto flex min-h-full w-full max-w-sm flex-col justify-center gap-6 py-6 text-left">
+            <nav aria-label="Mobile navigation" className="space-y-1">
+              <p className="mb-2 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Explore</p>
+              <Link to="/" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0">
+                <Home className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Home
+              </Link>
+              <Link to="/listings" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0">
+                <Building2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Explore stays
+              </Link>
+              {isListingDetails && (
+                <Link to={`${location.pathname}${location.search}`} onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0">
+                  <Building2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Property details
+                </Link>
+              )}
+            </nav>
+
+            {isAuthenticated ? (
+              <section className="space-y-1 border-t border-slate-200 pt-4">
+                <p className="mb-2 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Your account</p>
+                <Link to="/dashboard" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><LayoutDashboard className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Dashboard</Link>
+                <Link to="/my-bookings" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><CalendarCheck2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> My bookings</Link>
+                <Link to="/profile" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0">
+                  {avatar ? <img src={getImageUrl(avatar)} alt="" onError={() => setAvatar("")} className="h-7 w-7 rounded-full object-cover" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">{initials}</span>}
+                  {user?.name?.split(" ")[0] || "Profile"}
+                </Link>
+              </section>
+            ) : (
+              <section className="space-y-1 border-t border-slate-200 pt-4">
+                <p className="mb-2 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Welcome</p>
+                <Link to="/login" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0">Log in</Link>
+                <Link to="/register" onClick={() => setOpen(false)} className="flex w-fit items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition duration-150 hover:scale-[1.02] hover:bg-slate-800 active:scale-100">Sign up</Link>
+              </section>
+            )}
+
+            {isHost ? (
+              <section className="space-y-1 border-t border-slate-200 pt-4">
+                <p className="mb-2 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">{isSuperAdmin ? "Administration" : "Hosting"}</p>
+                <Link to="/admin/dashboard" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 active:translate-x-0"><Building2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> {isSuperAdmin ? "Admin console" : "Host portal"}</Link>
+                <Link to="/admin/listings" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><Building2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Host listings</Link>
+                <Link to="/admin/bookings" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><CalendarCheck2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Host bookings</Link>
+                {isSuperAdmin && <Link to="/admin/users" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><UserCog className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Trust &amp; safety</Link>}
+              </section>
+            ) : (
+              <section className="border-t border-slate-200 pt-4">
+                <p className="mb-2 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Hosting</p>
+                <Link to="/admin/login" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><UserCog className="h-4 w-4" aria-hidden="true" /> Host login</Link>
+              </section>
+            )}
+
+            {isAuthenticated && (
+              <div className="border-t border-slate-200 pt-4">
+                <button type="button" onClick={() => { setOpen(false); handleLogout(); }} className="group flex w-full items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0">
+                  <LogOut className="h-4 w-4" aria-hidden="true" /> Log out
+                </button>
+              </div>
+            )}
           </div>
-          <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl bg-accent/70 px-4 py-3 text-sm font-semibold text-navy-900">
-            <Home className="h-4 w-4" aria-hidden="true" /> Home
-          </Link>
-          <Link to="/listings" onClick={() => setOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70">
-            Browse listings
-          </Link>
-          {isAuthenticated ? (
-            <>
-              <Link
-                to="/dashboard"
-                onClick={() => setOpen(false)}
-                className="block rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70"
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/my-bookings"
-                onClick={() => setOpen(false)}
-                className="block rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70"
-              >
-                My bookings
-              </Link>
-              <Link to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70">
-                {avatar ? <img src={getImageUrl(avatar)} alt="" onError={() => setAvatar("")} className="h-7 w-7 rounded-full object-cover" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C9F2C7] text-xs font-bold text-[#243119]">{initials}</span>}
-                Hi, {user?.name?.split(" ")[0]}
-              </Link>
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  handleLogout();
-                }}
-                className="block rounded-xl px-4 py-3 text-left text-sm font-medium text-ink-700 hover:bg-white/70"
-              >
-                Log out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" onClick={() => setOpen(false)} className="block rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70">
-                Log in
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setOpen(false)}
-                className="block rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-white/70"
-              >
-                Sign up
-              </Link>
-            </>
-          )}
-          <Link
-            to={isHost ? "/admin/dashboard" : "/admin/login"}
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-500 hover:bg-white/70"
-          >
-            {isHost ? <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> : <UserCog className="h-4 w-4" aria-hidden="true" />}
-            {isHost ? (isSuperAdmin ? "Admin console" : "Host workspace") : "Host login"}
-          </Link>
-          {isSuperAdmin && (
-            <Link to="/admin/users" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-500 hover:bg-white/70">
-              <UserCog className="h-4 w-4" aria-hidden="true" /> Trust &amp; safety
-            </Link>
-          )}
         </div>
       )}
     </header>

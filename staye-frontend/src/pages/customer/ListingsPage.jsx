@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Filter, MapPin, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import { MapPin, Search, SlidersHorizontal } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
 import ListingCard from "../../components/listings/ListingCard";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
 import EmptyState from "../../components/common/EmptyState";
 import Button from "../../components/common/Button";
+import HomeIconLink from "../../components/common/HomeIconLink";
+import FiltersDialog from "../../components/common/FiltersDialog";
+import ListingSkeleton from "../../components/listings/ListingSkeleton";
 import { fetchListings } from "../../api/listings";
 
 const PAGE_LIMIT = 10;
@@ -23,7 +25,12 @@ const INITIAL_FILTERS = {
 export default function ListingsPage() {
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get("location") || "";
-  const initialFilters = { ...INITIAL_FILTERS, location: initialLocation };
+  const initialFilters = {
+    ...INITIAL_FILTERS,
+    location: initialLocation,
+    checkIn: searchParams.get("checkIn") || "",
+    checkOut: searchParams.get("checkOut") || "",
+  };
   const [filters, setFilters] = useState(initialFilters);
   const [draft, setDraft] = useState(initialFilters);
   const [listings, setListings] = useState([]);
@@ -57,8 +64,7 @@ export default function ListingsPage() {
     }
   }
 
-  function submitFilters(event) {
-    event.preventDefault();
+  function submitFilters() {
     loadListings(draft, 1);
   }
 
@@ -70,7 +76,7 @@ export default function ListingsPage() {
   const activeFilterCount = [filters.location, filters.priceMin, filters.priceMax, filters.amenities, filters.roomType].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-[#f5f8f2]">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -81,83 +87,60 @@ export default function ListingsPage() {
               Find a place that fits the way you want to travel.
             </p>
           </div>
-          <Link to="/" className="self-start sm:self-auto">
-            <Button type="button" variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Back to home
-            </Button>
-          </Link>
+          <HomeIconLink className="self-start sm:self-auto" />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <aside className="h-fit rounded-2xl border border-ink-300 bg-white p-5 shadow-card lg:sticky lg:top-5">
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="flex items-center gap-2 font-bold text-navy-900"><Filter className="h-4 w-4 text-brand" aria-hidden="true" /> Refine stays</h2>
-                {activeFilterCount > 0 && <span className="rounded-full bg-accent px-2 py-1 text-xs font-bold text-navy-900">{activeFilterCount} active</span>}
-              </div>
-              <button type="button" onClick={resetFilters} className="flex items-center gap-1 text-xs font-semibold text-brand hover:text-brand-hover">
-                <RotateCcw className="h-3 w-3" aria-hidden="true" /> Reset
-              </button>
-            </div>
-            <div className="mb-5 flex items-center gap-2 rounded-xl bg-brand-light px-3 py-2 text-xs leading-5 text-ink-700">
-              <SlidersHorizontal className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
-              Narrow your search by place, room type, price, and amenities.
-            </div>
-            <form onSubmit={submitFilters} className="space-y-4">
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink-700">Destination</span>
-                <span className="flex items-center gap-2 rounded-full border border-ink-300 px-3 py-2.5">
-                  <MapPin className="h-4 w-4 shrink-0 text-ink-500" aria-hidden="true" />
-                  <input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="Any destination" className="w-full bg-transparent text-sm outline-none" />
-                </span>
-              </label>
-              <div>
-                <span className="mb-1.5 block text-xs font-semibold text-ink-700">Price per night</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="number" min="0" value={draft.priceMin} onChange={(event) => setDraft({ ...draft, priceMin: event.target.value })} placeholder="Min" className="w-full rounded-full border border-ink-300 px-3 py-2.5 text-sm outline-none" />
-                  <input type="number" min="0" value={draft.priceMax} onChange={(event) => setDraft({ ...draft, priceMax: event.target.value })} placeholder="Max" className="w-full rounded-full border border-ink-300 px-3 py-2.5 text-sm outline-none" />
-                </div>
-              </div>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink-700">Room category</span>
-                <input value={draft.roomType} onChange={(event) => setDraft({ ...draft, roomType: event.target.value })} placeholder="Classic, Deluxe, Suite" className="w-full rounded-full border border-ink-300 px-3 py-2.5 text-sm outline-none focus:border-brand" />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink-700">Amenities</span>
-                <input value={draft.amenities} onChange={(event) => setDraft({ ...draft, amenities: event.target.value })} placeholder="WiFi, breakfast, pool" className="w-full rounded-full border border-ink-300 px-3 py-2.5 text-sm outline-none focus:border-brand" />
-                <span className="mt-1 block text-[11px] text-ink-500">Separate multiple amenities with commas.</span>
-              </label>
-              <Button type="submit" className="w-full"><Search className="h-4 w-4" aria-hidden="true" /> Apply filters</Button>
-            </form>
-          </aside>
-
-          <section>
+        <section>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-sm text-ink-500">{isLoading ? "Finding stays..." : `${listings.length} stays on this page`}</p>
                 <h2 className="mt-1 text-xl font-bold text-navy-900">Places you might love</h2>
               </div>
-              <label className="flex items-center gap-2 text-sm text-ink-500">
-                Sort by
-                <select value={`${filters.sortBy}:${filters.order}`} onChange={(event) => {
-                  const [sortBy, order] = event.target.value.split(":");
-                  const next = { ...filters, sortBy, order };
-                  setDraft(next);
-                  loadListings(next, 1);
-                }} className="rounded-full border border-ink-300 bg-white px-3 py-2 font-medium text-navy-900 outline-none">
-                  <option value="createdAt:desc">Date added</option>
-                  <option value="updatedAt:desc">Recently modified</option>
-                  <option value="price:asc">Price: low to high</option>
-                  <option value="price:desc">Price: high to low</option>
-                  <option value="title:asc">Name</option>
-                </select>
-              </label>
+              <FiltersDialog title="Filter stays" description="Set your destination, price range, room type, and amenities." activeCount={activeFilterCount} resultCount={listings.length} onReset={resetFilters} onApply={submitFilters} applyLabel="Apply filters">
+                <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs leading-5 text-ink-700 sm:col-span-2">
+                  <SlidersHorizontal className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" /> Choose the details that matter for your stay.
+                </div>
+                <label className="block sm:col-span-2">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink-700">Destination</span>
+                  <span className="flex items-center gap-2 rounded-xl border border-ink-300 px-3 py-2.5">
+                    <MapPin className="h-4 w-4 shrink-0 text-ink-500" aria-hidden="true" />
+                    <input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="Any destination" className="w-full bg-transparent text-sm outline-none" />
+                  </span>
+                </label>
+                <div>
+                  <span className="mb-1.5 block text-xs font-semibold text-ink-700">Price per night</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" min="0" value={draft.priceMin} onChange={(event) => setDraft({ ...draft, priceMin: event.target.value })} placeholder="Min" className="w-full rounded-xl border border-ink-300 px-3 py-2.5 text-sm outline-none" />
+                    <input type="number" min="0" value={draft.priceMax} onChange={(event) => setDraft({ ...draft, priceMax: event.target.value })} placeholder="Max" className="w-full rounded-xl border border-ink-300 px-3 py-2.5 text-sm outline-none" />
+                  </div>
+                </div>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink-700">Room category</span>
+                  <input value={draft.roomType} onChange={(event) => setDraft({ ...draft, roomType: event.target.value })} placeholder="Classic, Deluxe, Suite" className="w-full rounded-xl border border-ink-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200" />
+                </label>
+                <label className="block sm:col-span-2">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink-700">Amenities</span>
+                  <input value={draft.amenities} onChange={(event) => setDraft({ ...draft, amenities: event.target.value })} placeholder="WiFi, breakfast, pool" className="w-full rounded-xl border border-ink-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200" />
+                  <span className="mt-1 block text-[11px] text-ink-500">Separate multiple amenities with commas.</span>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink-700">Sort by</span>
+                  <select value={draft.sortBy} onChange={(event) => setDraft({ ...draft, sortBy: event.target.value })} className="w-full rounded-xl border border-ink-300 bg-white px-3 py-2.5 text-sm text-navy-900 outline-none">
+                    <option value="createdAt">Date added</option><option value="updatedAt">Recently modified</option><option value="price">Price: low to high</option><option value="title">Name</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-ink-700">Order</span>
+                  <select value={draft.order} onChange={(event) => setDraft({ ...draft, order: event.target.value })} className="w-full rounded-xl border border-ink-300 bg-white px-3 py-2.5 text-sm text-navy-900 outline-none">
+                    <option value="desc">Descending</option><option value="asc">Ascending</option>
+                  </select>
+                </label>
+              </FiltersDialog>
             </div>
 
             {error && <div className="mb-4 rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm text-danger">{error}</div>}
-            {isLoading ? <LoadingSpinner label="Loading stays..." /> : listings.length === 0 && !error ? <EmptyState title="No stays found" description="Try widening your price range or searching another destination." /> : (
-              <div className="space-y-4">{listings.map((listing) => <ListingCard key={listing._id} listing={listing} />)}</div>
+            {isLoading ? <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3" aria-label="Loading stays" aria-busy="true">{Array.from({ length: 6 }, (_, index) => <ListingSkeleton key={index} />)}</div> : listings.length === 0 && !error ? <EmptyState title="No stays found" description="Try widening your price range or searching another destination." /> : (
+              <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">{listings.map((listing) => <ListingCard key={listing._id} listing={listing} checkIn={filters.checkIn} checkOut={filters.checkOut} />)}</div>
             )}
 
             {!isLoading && listings.length > 0 && (
@@ -167,8 +150,7 @@ export default function ListingsPage() {
                 <Button variant="outline" size="sm" disabled={listings.length < PAGE_LIMIT} onClick={() => loadListings(filters, page + 1)}>Next</Button>
               </div>
             )}
-          </section>
-        </div>
+        </section>
       </main>
       <Footer />
     </div>

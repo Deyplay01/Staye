@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/common/Button";
 import PasswordInput from "../../components/common/PasswordInput";
 import GoogleAuthButton from "../../components/common/GoogleAuthButton";
@@ -48,44 +49,31 @@ export default function AdminRegisterPage() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-white bg-cover bg-center"
-      style={{ backgroundImage: "linear-gradient(rgba(36, 49, 25, 0.38), rgba(36, 49, 25, 0.38)), url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1800&q=85)" }}
+    <AuthLayout
+      host
+      eyebrow="Join Staye as a host"
+      title="Create your host account"
+      description="List your property, manage room options, and keep bookings organized in one workspace."
+      footer={<>Already hosting on Staye?{" "}<Link to="/admin/login" className="font-bold text-slate-900 hover:text-brand">Log in</Link></>}
     >
-      <div className="mx-auto flex min-h-screen max-w-lg items-center px-4 py-10 sm:px-6">
-        <div className="w-full rounded-3xl border border-[#96BE8C] bg-white p-6 shadow-popover sm:p-10">
-          <div className="mb-8 flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#243119] text-lg font-bold text-[#C9F2C7]">S</span>
-            <div>
-              <p className="text-lg font-bold text-[#243119]">Stayé / host</p>
-              <p className="text-xs text-[#629460]">Create a host workspace</p>
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#243119]">Join as a host</h1>
-          <p className="mt-2 text-sm leading-6 text-[#629460]">Create a host account to manage listings and bookings. New listings are reviewed before going public.</p>
+          {error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
 
-          {error && <p className="mt-5 rounded-xl bg-[#C9F2C7] px-3 py-2 text-sm text-[#243119]">{error}</p>}
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Full name</span><input required value={form.name} onChange={(event) => update("name", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
-            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Email</span><input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
-            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#243119]">Password</span><PasswordInput required minLength={8} value={form.password} onChange={(event) => update("password", event.target.value)} className="w-full rounded-xl border border-[#96BE8C] px-3 py-3 text-sm text-[#243119] outline-none focus:border-[#629460]" /></label>
-            <Button type="submit" className="w-full bg-[#243119] hover:bg-[#629460]" size="lg" disabled={isSubmitting}>{isSubmitting ? "Creating workspace..." : "Create host account"}</Button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Full name</span><input required id="name" name="name" autoComplete="name" value={form.name} onChange={(event) => update("name", event.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10" /></label>
+            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Email</span><input required type="email" id="email" name="email" autoComplete="email" spellCheck="false" value={form.email} onChange={(event) => update("email", event.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10" /></label>
+            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Password</span><PasswordInput required minLength={8} id="new-password" name="password" autoComplete="new-password" value={form.password} onChange={(event) => update("password", event.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10" /><span className="mt-1.5 block text-xs text-slate-500">At least 8 characters.</span></label>
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>{isSubmitting ? "Creating workspace..." : "Create host account"}</Button>
           </form>
 
-          <div className="my-5 flex items-center gap-2">
+          <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs uppercase tracking-wider text-slate-400">or</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">or continue with</span>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
           <div className="flex justify-center">
             <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={() => setError("Google sign-up couldn't be completed. Please try again.")} text="signup_with" disabled={isSubmitting} />
           </div>
 
-          <p className="mt-6 text-center text-sm text-[#629460]">Already a host? <Link to="/admin/login" className="font-bold text-[#243119] hover:underline">Log in</Link></p>
-          <Link to="/" className="mt-3 block text-center text-xs text-[#629460] hover:underline">Back to homepage</Link>
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

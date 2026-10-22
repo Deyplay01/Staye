@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import SkeletonBlock from "../../components/common/SkeletonBlock";
+import FiltersDialog from "../../components/common/FiltersDialog";
 import EmptyState from "../../components/common/EmptyState";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
@@ -88,7 +89,7 @@ export default function UserDashboardPage() {
   const recentBookings = bookings.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-[#f5f8f2]">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -116,42 +117,41 @@ export default function UserDashboardPage() {
         )}
 
         {isLoading ? (
-          <LoadingSpinner label="Loading your dashboard..." />
+          <div className="space-y-6" aria-label="Loading dashboard" aria-busy="true">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }, (_, index) => <div key={index} className="space-y-4 rounded-2xl border border-ink-300 bg-white p-5 shadow-card"><SkeletonBlock className="h-5 w-5 rounded-full" /><SkeletonBlock className="h-4 w-2/3" /><SkeletonBlock className="h-8 w-1/3" /></div>)}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => <div key={index} className="space-y-4 rounded-2xl border border-ink-300 bg-white p-5 shadow-card"><SkeletonBlock className="h-5 w-5 rounded-full" /><SkeletonBlock className="h-4 w-2/3" /><SkeletonBlock className="h-8 w-1/3" /></div>)}
+            </div>
+            <div className="space-y-3 rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
+              <SkeletonBlock className="h-6 w-1/3" />
+              {Array.from({ length: 3 }, (_, index) => <SkeletonBlock key={index} className="h-14 w-full rounded-xl" />)}
+            </div>
+          </div>
         ) : (
           <>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <p className="staye-eyebrow">Booking overview</p>
-              <div className="flex flex-wrap items-end gap-2">
-                <label className="text-xs font-semibold text-ink-500">
-                  Spending period
-                  <select
-                    value={period}
-                    onChange={handlePeriodChange}
-                    className="mt-1 block rounded-xl border border-ink-300 bg-white px-3 py-2 text-sm font-medium text-ink-900"
-                  >
-                    <option value="all">All time</option>
-                    <option value="month">By month</option>
-                    <option value="week">By week</option>
-                    <option value="day">By day</option>
+              <FiltersDialog title="Spending period" description="Choose the date range for your booking overview." activeCount={period === "all" ? 0 : 1}>
+                <label className="block text-xs font-semibold text-ink-500">
+                  Period
+                  <select value={period} onChange={handlePeriodChange} className="mt-1 block w-full rounded-xl border border-ink-300 bg-white px-3 py-2.5 text-sm font-normal text-ink-900">
+                    <option value="all">All time</option><option value="month">By month</option><option value="week">By week</option><option value="day">By day</option>
                   </select>
                 </label>
                 {period !== "all" && (
-                  <label className="text-xs font-semibold text-ink-500">
+                  <label className="block text-xs font-semibold text-ink-500">
                     Period date
-                    <input
-                      type={period === "month" ? "month" : "date"}
-                      value={periodValue}
-                      onChange={(event) => setPeriodValue(event.target.value)}
-                      className="mt-1 block rounded-xl border border-ink-300 bg-white px-3 py-2 text-sm font-medium text-ink-900"
-                    />
+                    <input type={period === "month" ? "month" : "date"} value={periodValue} onChange={(event) => setPeriodValue(event.target.value)} className="mt-1 block w-full rounded-xl border border-ink-300 bg-white px-3 py-2.5 text-sm font-normal text-ink-900" />
                   </label>
                 )}
-              </div>
+              </FiltersDialog>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
                 <CalendarCheck2
-                  className="h-5 w-5 text-brand"
+                  className="h-5 w-5 text-slate-500"
                   aria-hidden="true"
                 />
                 <p className="mt-4 text-sm text-ink-500">Upcoming stays</p>
@@ -161,7 +161,7 @@ export default function UserDashboardPage() {
               </div>
               <div className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
                 <ReceiptText
-                  className="h-5 w-5 text-brand"
+                  className="h-5 w-5 text-slate-500"
                   aria-hidden="true"
                 />
                 <p className="mt-4 text-sm text-ink-500">Bookings in period</p>
@@ -171,7 +171,7 @@ export default function UserDashboardPage() {
               </div>
               <div className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
                 <CalendarCheck2
-                  className="h-5 w-5 text-brand"
+                  className="h-5 w-5 text-slate-500"
                   aria-hidden="true"
                 />
                 <p className="mt-4 text-sm text-ink-500">
@@ -183,7 +183,7 @@ export default function UserDashboardPage() {
               </div>
               <div className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
                 <CircleDollarSign
-                  className="h-5 w-5 text-brand"
+                  className="h-5 w-5 text-slate-500"
                   aria-hidden="true"
                 />
                 <p className="mt-4 text-sm text-ink-500">
@@ -197,7 +197,7 @@ export default function UserDashboardPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
                 <CheckCircle2
-                  className="h-5 w-5 text-brand"
+                  className="h-5 w-5 text-slate-500"
                   aria-hidden="true"
                 />
                 <p className="mt-4 text-sm text-ink-500">Confirmed bookings</p>
@@ -206,14 +206,14 @@ export default function UserDashboardPage() {
                 </p>
               </div>
               <div className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
-                <XCircle className="h-5 w-5 text-brand" aria-hidden="true" />
+                <XCircle                 className="h-5 w-5 text-slate-500" aria-hidden="true" />
                 <p className="mt-4 text-sm text-ink-500">Cancelled bookings</p>
                 <p className="mt-1 text-3xl font-bold text-ink-900">
                   {cancelledBookings}
                 </p>
               </div>
               <div className="rounded-2xl border border-ink-300 bg-white p-5 shadow-card">
-                <Clock3 className="h-5 w-5 text-brand" aria-hidden="true" />
+                <Clock3 className="h-5 w-5 text-slate-500" aria-hidden="true" />
                 <p className="mt-4 text-sm text-ink-500">Pending bookings</p>
                 <p className="mt-1 text-3xl font-bold text-ink-900">
                   {pendingBookings}
@@ -231,7 +231,7 @@ export default function UserDashboardPage() {
                 </div>
                 <Link
                   to="/my-bookings"
-                  className="text-sm font-semibold text-brand hover:text-brand-hover"
+                  className="text-sm font-semibold text-slate-700 hover:text-slate-900"
                 >
                   View all bookings
                 </Link>
@@ -243,7 +243,7 @@ export default function UserDashboardPage() {
                   action={
                     <Link
                       to="/listings"
-                      className="text-sm font-semibold text-brand hover:underline"
+                      className="text-sm font-semibold text-slate-700 hover:text-slate-900 hover:underline"
                     >
                       Browse listings
                     </Link>
@@ -261,13 +261,13 @@ export default function UserDashboardPage() {
                     return (
                       <div
                         key={booking._id}
-                        className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-ink-300 bg-gray-50 p-4"
+                        className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-ink-300 bg-slate-50 p-4"
                       >
                         <Link
                           to={`/my-bookings?listingId=${encodeURIComponent(listingId || "")}`}
-                          className="min-w-0 flex-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
+                          className="min-w-0 flex-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                         >
-                          <p className="font-semibold text-ink-900 hover:text-brand">
+                          <p className="font-semibold text-ink-900 hover:text-slate-700">
                             {listing.title || "Listing"}
                           </p>
                           <p className="mt-1 text-sm text-ink-500">
@@ -275,7 +275,7 @@ export default function UserDashboardPage() {
                             {formatDateLong(booking.checkIn)} to{" "}
                             {formatDateLong(booking.checkOut)}
                           </p>
-                          <p className="mt-1 text-xs font-semibold text-brand">
+                          <p className="mt-1 text-xs font-semibold text-slate-600">
                             View all bookings for this listing
                           </p>
                         </Link>
@@ -295,7 +295,7 @@ export default function UserDashboardPage() {
                             <Link
                               to={`/receipt/${booking._id}`}
                               aria-label={`View receipt for ${listing.title || "booking"}`}
-                              className="text-brand hover:text-brand-hover"
+                              className="text-slate-600 hover:text-slate-900"
                             >
                               <ReceiptText
                                 className="h-5 w-5"

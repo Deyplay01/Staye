@@ -30,6 +30,9 @@ const allowedOrigins = frontendOrigins
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+if (process.env.NODE_ENV !== "production") {
+    allowedOrigins.push("http://localhost:5173", "http://127.0.0.1:5173");
+}
 const corsOptions = {
     origin: allowedOrigins,
     methods: ["GET", "HEAD", "PUT", "POST", "PATCH", "DELETE"],

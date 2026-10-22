@@ -1,12 +1,11 @@
 import React, { lazy, Suspense, useLayoutEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
 import HomePage from "./pages/customer/HomePage";
 import ListingsPage from "./pages/customer/ListingsPage";
 import ListingDetailsPage from "./pages/customer/ListingDetailsPage";
-import BookingPage from "./pages/customer/BookingPage";
 import ConfirmationPage from "./pages/customer/ConfirmationPage";
 import MyBookingsPage from "./pages/customer/MyBookingsPage";
 import UserDashboardPage from "./pages/customer/UserDashboardPage";
@@ -20,6 +19,7 @@ import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminRegisterPage from "./pages/admin/AdminRegisterPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminListingsPage from "./pages/admin/AdminListingsPage";
+import AdminListingRoomsPage from "./pages/admin/AdminListingRoomsPage";
 import AdminBookingsPage from "./pages/admin/AdminBookingsPage";
 import AdminBookingVerificationPage from "./pages/admin/AdminBookingVerificationPage";
 import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage";
@@ -38,6 +38,14 @@ function ScrollToTop() {
   return null;
 }
 
+function BookingRouteRedirect() {
+  const { listingId } = useParams();
+  const [searchParams] = useSearchParams();
+  const query = new URLSearchParams(searchParams);
+  query.set("reserve", "1");
+  return <Navigate to={`/listings/${listingId}?${query.toString()}`} replace />;
+}
+
 export default function App() {
   return (
     <>
@@ -48,14 +56,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/listings" element={<ListingsPage />} />
       <Route path="/listings/:id" element={<ListingDetailsPage />} />
-      <Route
-        path="/booking/:listingId"
-        element={
-          <ProtectedRoute>
-            <BookingPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/booking/:listingId" element={<BookingRouteRedirect />} />
       <Route
         path="/confirmation/:bookingId"
         element={
@@ -141,6 +142,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={["host", "admin"]}>
             <AdminListingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/listings/:listingId/rooms"
+        element={
+          <ProtectedRoute allowedRoles={["host", "admin"]}>
+            <AdminListingRoomsPage />
           </ProtectedRoute>
         }
       />

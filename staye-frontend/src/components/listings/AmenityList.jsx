@@ -36,7 +36,7 @@ export default function AmenityList({ amenities = [] }) {
         const Icon = ICON_MAP[amenity] || Check;
         return (
           <li key={amenity} className="flex items-center gap-2 text-sm text-ink-700">
-            <Icon className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+            <Icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
             {amenity}
           </li>
         );
