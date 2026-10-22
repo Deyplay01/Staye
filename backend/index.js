@@ -117,7 +117,7 @@ app.use("/api/payments", paymentLimiter, paymentRoutes);
 app.use("/api/uploads", uploadLimiter, uploadRoutes);
 app.use("/api/notifications", notificationsRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || (process.env.NODE_ENV === "production" ? 10000 : 5000);
 const MONGODB_URI = process.env.MONGODB_URI;
 
 app.get("/", (req, res) => {
@@ -130,7 +130,7 @@ if (!MONGODB_URI || !process.env.JWT_SECRET) {
 }
 
 mongoose.connect(MONGODB_URI).then(async () => {
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
         console.log("Server running on port:", PORT);
     })
 }).catch((error) => {
