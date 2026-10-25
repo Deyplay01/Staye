@@ -9,6 +9,7 @@ import SkeletonBlock from "../../components/common/SkeletonBlock";
 import EmptyState from "../../components/common/EmptyState";
 import Button from "../../components/common/Button";
 import BookingReviewDialog from "../../components/booking/BookingReviewDialog";
+import SeoMetadata from "../../components/common/SeoMetadata";
 import { fetchListingById } from "../../api/listings";
 import { calculateNights, todayISO, addDaysISO } from "../../utils/date";
 import { calculateTotalCost, formatPrice } from "../../utils/price";
@@ -55,6 +56,32 @@ export default function ListingDetailsPage() {
   const estimatedTotal = selectedRoom ? calculateTotalCost(selectedRoom.price, nights) : 0;
   const hostName = listing?.hostName?.trim();
   const hostInitials = hostName?.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+  const listingDescription = listing?.description?.replace(/\s+/g, " ").trim();
+  const listingImages = listing?.images?.filter((image) => /^https?:\/\//i.test(image)) || [];
+  const structuredData = listing && {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    name: listing.title,
+    description: listingDescription,
+    url: `https://staye.vercel.app/listings/${listing._id}`,
+    ...(listingImages.length ? { image: listingImages } : {}),
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: listing.location,
+    },
+  };
+  const seoMetadata = (
+    <SeoMetadata
+      title={listing ? `${listing.title} in ${listing.location} | Staye` : "Stay listing | Staye"}
+      description={listingDescription
+        ? `${listingDescription.slice(0, 150)}${listingDescription.length > 150 ? "…" : ""}`
+        : "View this place to stay, compare room options, and plan your trip with Staye."}
+      canonicalPath={`/listings/${listing?._id || id}`}
+      image={structuredData?.image?.[0]}
+      structuredData={structuredData}
+      noIndex={!listing}
+    />
+  );
 
   function handleReserve() {
     if (!selectedRoom) return;
@@ -73,6 +100,7 @@ export default function ListingDetailsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
+        {seoMetadata}
         <Navbar />
         <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-8" aria-label="Loading listing" aria-busy="true">
           <SkeletonBlock className="h-8 w-2/3" />
@@ -100,6 +128,7 @@ export default function ListingDetailsPage() {
   if (error || !listing) {
     return (
       <div className="min-h-screen bg-slate-50">
+        {seoMetadata}
         <Navbar />
         <div className="mx-auto max-w-3xl px-4 py-16">
           <EmptyState
@@ -118,6 +147,7 @@ export default function ListingDetailsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {seoMetadata}
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
         <div className="mb-6">

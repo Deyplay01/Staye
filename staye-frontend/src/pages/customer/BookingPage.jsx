@@ -107,7 +107,7 @@ export default function BookingPage() {
         <div className="rounded-2xl border border-ink-300 bg-white p-6 shadow-card">
           <div className="flex gap-3">
             <img
-              src={getImageUrl(listing.images?.[0]) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
+              src={getImageUrl(listing.images?.[0], 320) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
               alt=""
               className="h-16 w-20 rounded-sm object-cover"
             />

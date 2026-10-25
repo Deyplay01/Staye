@@ -9,6 +9,7 @@ import Button from "../../components/common/Button";
 import HomeIconLink from "../../components/common/HomeIconLink";
 import FiltersDialog from "../../components/common/FiltersDialog";
 import ListingSkeleton from "../../components/listings/ListingSkeleton";
+import SeoMetadata from "../../components/common/SeoMetadata";
 import { fetchListings } from "../../api/listings";
 
 const PAGE_LIMIT = 10;
@@ -77,6 +78,13 @@ export default function ListingsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
+      <SeoMetadata
+        title={initialLocation ? `Stays in ${initialLocation} | Staye` : "Explore places to stay | Staye"}
+        description={initialLocation
+          ? `Find and compare places to stay in ${initialLocation}. Browse available listings and room options on Staye.`
+          : "Browse available places to stay, compare room options, and find the right fit for your next trip with Staye."}
+        canonicalPath="/listings"
+      />
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

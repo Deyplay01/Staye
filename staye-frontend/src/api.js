@@ -15,7 +15,7 @@ async function getApiError(response, fallbackMessage) {
   }
 }
 
-export function getImageUrl(imageUrl) {
+export function getImageUrl(imageUrl, width = 1600) {
   if (!imageUrl) {
     return imageUrl;
   }
@@ -30,6 +30,22 @@ export function getImageUrl(imageUrl) {
   }
 
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    try {
+      const parsedUrl = new URL(imageUrl);
+      if (parsedUrl.hostname === "res.cloudinary.com" && parsedUrl.pathname.includes("/image/upload/")) {
+        const requestedWidth = Number(width);
+        const safeWidth = Number.isFinite(requestedWidth)
+          ? Math.max(1, Math.min(Math.round(requestedWidth), 2560))
+          : 1600;
+        parsedUrl.pathname = parsedUrl.pathname.replace(
+          "/image/upload/",
+          `/image/upload/f_auto,q_auto,w_${safeWidth},c_limit/`,
+        );
+        return parsedUrl.href;
+      }
+    } catch {
+      // Return the original URL if it cannot be parsed.
+    }
     return imageUrl;
   }
   return `${API_BASE_URL}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;

@@ -12,7 +12,7 @@ export default function ListingsTable({ listings, onEdit, onDelete }) {
             <article key={listing._id} className="p-4">
               <Link to={`/admin/listings/${listing._id}/rooms`} className="group flex gap-3 rounded-xl focus-visible:outline-navy-900">
                 <img
-                  src={getImageUrl(listing.images?.[0]) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
+                  src={getImageUrl(listing.images?.[0], 320) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
                   alt=""
                   className="h-20 w-24 shrink-0 rounded-xl object-cover"
                 />
@@ -63,7 +63,7 @@ export default function ListingsTable({ listings, onEdit, onDelete }) {
                   <td className="flex items-center gap-3 px-4 py-3">
                     <Link to={`/admin/listings/${listing._id}/rooms`} className="flex min-w-0 items-center gap-3 font-semibold text-ink-900 hover:text-brand">
                       <img
-                        src={getImageUrl(listing.images?.[0]) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
+                        src={getImageUrl(listing.images?.[0], 320) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
                         alt=""
                         className="h-10 w-12 shrink-0 rounded-xl object-cover"
                       />

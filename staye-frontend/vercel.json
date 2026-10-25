@@ -12,6 +12,32 @@
   ],
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "https://staye-backend.onrender.com/seo/sitemap.xml"
+    },
+    {
+      "source": "/listings",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|bingbot|BingPreview|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot).*"
+        }
+      ],
+      "destination": "https://staye-backend.onrender.com/seo/listings"
+    },
+    {
+      "source": "/listings/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|bingbot|BingPreview|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot).*"
+        }
+      ],
+      "destination": "https://staye-backend.onrender.com/seo/listings/:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

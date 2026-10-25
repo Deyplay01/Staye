@@ -9,6 +9,7 @@ import EmptyState from "../../components/common/EmptyState";
 import { fetchListings, fetchPopularLocations } from "../../api/listings";
 import { getImageUrl } from "../../api";
 import ListingSkeleton from "../../components/listings/ListingSkeleton";
+import SeoMetadata from "../../components/common/SeoMetadata";
 import HERO_IMAGE from "../../asset/hero-image.avif"
 
 const PAGE_LIMIT = 10;
@@ -52,6 +53,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-slate-900">
+      <SeoMetadata
+        title="Staye | Find a place that feels like yours"
+        description="Explore welcoming places to stay, compare room options, and book your next trip with Staye."
+        canonicalPath="/"
+      />
       <Navbar />
 
       <main>
@@ -104,7 +110,7 @@ export default function HomePage() {
                   className="group relative min-h-56 overflow-hidden rounded-2xl bg-slate-200 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
                   <img
-                    src={getImageUrl(location.image) || HERO_IMAGE}
+                    src={getImageUrl(location.image, 960) || HERO_IMAGE}
                     alt={`${location.location} stays`}
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
