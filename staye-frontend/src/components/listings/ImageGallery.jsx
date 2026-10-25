@@ -37,9 +37,10 @@ export default function ImageGallery({ images = [], alt }) {
           className={`block h-full w-full cursor-zoom-in overflow-hidden ${mainImageSize} md:row-span-2`}
         >
           <img
-            src={getImageUrl(images[active])}
+            src={getImageUrl(images[active], 1600)}
             alt={`${alt} — photo ${active + 1}`}
             className="h-full w-full object-cover"
+            fetchPriority="high"
           />
         </button>
         {otherPhotoIndices.map((index) => (
@@ -51,7 +52,7 @@ export default function ImageGallery({ images = [], alt }) {
             aria-current={index === active}
             className={`hidden min-h-0 cursor-zoom-in overflow-hidden bg-accent md:block ${images.length === 2 ? "md:row-span-2" : ""}`}
           >
-            <img src={getImageUrl(images[index])} alt="" className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.03]" />
+            <img src={getImageUrl(images[index], 640)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.03]" />
           </button>
         ))}
       </div>
@@ -66,7 +67,7 @@ export default function ImageGallery({ images = [], alt }) {
               aria-label={`View photo ${index + 1} full size`}
               aria-current={index === active}
             >
-              <img src={getImageUrl(src)} alt="" className="h-full w-full object-cover" />
+              <img src={getImageUrl(src, 256)} alt="" loading="lazy" className="h-full w-full object-cover" />
             </button>
           ))}
         </div>
@@ -88,7 +89,7 @@ export default function ImageGallery({ images = [], alt }) {
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
-          <img src={getImageUrl(images[active])} alt={`${alt} — photo ${active + 1}`} className="max-h-[82vh] max-w-[90vw] rounded-lg object-contain" />
+          <img src={getImageUrl(images[active], 2560)} alt={`${alt} — photo ${active + 1}`} className="max-h-[82vh] max-w-[90vw] rounded-lg object-contain" />
           {images.length > 1 && (
             <>
               <button

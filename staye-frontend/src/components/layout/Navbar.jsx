@@ -95,7 +95,7 @@ export default function Navbar() {
               className="flex items-center gap-2 rounded-full border border-slate-200 p-1.5 pl-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:shadow-md"
             >
               <Menu className="h-4 w-4" aria-hidden="true" />
-              {avatar ? <img src={getImageUrl(avatar)} alt="" onError={() => setAvatar("")} className="h-8 w-8 rounded-full object-cover" /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">{initials}</span>}
+              {avatar ? <img src={getImageUrl(avatar, 64)} alt="" onError={() => setAvatar("")} className="h-8 w-8 rounded-full object-cover" /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">{initials}</span>}
             </button>
             {desktopMenu === "account" && (
               <div className="absolute right-0 top-full mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
@@ -163,7 +163,7 @@ export default function Navbar() {
                 <Link to="/dashboard" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><LayoutDashboard className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> Dashboard</Link>
                 <Link to="/my-bookings" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0"><CalendarCheck2 className="h-4 w-4 text-slate-500 group-hover:text-slate-900" aria-hidden="true" /> My bookings</Link>
                 <Link to="/profile" onClick={() => setOpen(false)} className="group flex items-center justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition duration-150 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 active:translate-x-0">
-                  {avatar ? <img src={getImageUrl(avatar)} alt="" onError={() => setAvatar("")} className="h-7 w-7 rounded-full object-cover" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">{initials}</span>}
+                  {avatar ? <img src={getImageUrl(avatar, 64)} alt="" onError={() => setAvatar("")} className="h-7 w-7 rounded-full object-cover" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">{initials}</span>}
                   {user?.name?.split(" ")[0] || "Profile"}
                 </Link>
               </section>

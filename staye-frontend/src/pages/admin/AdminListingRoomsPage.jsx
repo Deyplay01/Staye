@@ -80,7 +80,7 @@ export default function AdminListingRoomsPage() {
             <header className="mb-6 flex flex-wrap items-center gap-4">
               {listing.images?.[0] && (
                 <img
-                  src={getImageUrl(listing.images[0])}
+                  src={getImageUrl(listing.images[0], 480)}
                   alt=""
                   className="h-20 w-28 rounded-xl object-cover"
                 />

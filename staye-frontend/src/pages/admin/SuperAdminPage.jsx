@@ -253,7 +253,7 @@ export default function SuperAdminPage() {
                       {listing.images.slice(0, 6).map((image, index) => (
                         <img
                           key={`${image}-${index}`}
-                          src={getImageUrl(image)}
+                          src={getImageUrl(image, 480)}
                           alt={`${listing.title} photo ${index + 1}`}
                           loading="lazy"
                           className="h-28 w-full rounded-xl object-cover"

@@ -244,12 +244,16 @@ router.post("/", authMiddleware, requireRoles("host", "admin"), async (req, res)
             return res.status(400).json({ message: "Title, description, and location are required." });
         }
 
+        const listingImages = Array.isArray(images) ? images.filter(Boolean) : [];
+        if (listingImages.length > 10) {
+            return res.status(400).json({ message: "A listing can have up to 10 images." });
+        }
         const normalizedRooms = normalizeRoomPayloads(rooms);
         const newListing = new Listing({
             title,
             description,
             location,
-            images: Array.isArray(images) ? images.filter(Boolean) : [],
+            images: listingImages,
             amenities: Array.isArray(amenities) ? amenities.map((item) => String(item).trim()).filter(Boolean) : [],
             hostId: req.user.userId,
         });
@@ -293,6 +297,9 @@ router.put("/:id", authMiddleware, requireRoles("host", "admin"), async (req, re
         }
 
         const nextImages = Array.isArray(images) ? images.filter(Boolean) : [];
+        if (nextImages.length > 10 && nextImages.length > (currentListing.images || []).length) {
+            return res.status(400).json({ message: "A listing can have up to 10 images." });
+        }
         const nextAmenities = Array.isArray(amenities) ? amenities.map((item) => String(item).trim()).filter(Boolean) : [];
         const contentChanged = title !== currentListing.title
             || description !== currentListing.description

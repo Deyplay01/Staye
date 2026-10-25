@@ -104,11 +104,28 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
   async function handleImageUpload(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
-    if (imageFiles.length !== files.length) {
-      setUploadError("Only image files can be uploaded.");
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+    const maxFileSize = 5 * 1024 * 1024;
+    const maxRequestSize = 20 * 1024 * 1024;
+    const remainingSlots = 10 - form.images.length;
+    if (files.length > remainingSlots) {
+      setUploadError(`You can add up to 10 listing images. ${remainingSlots} slot${remainingSlots === 1 ? "" : "s"} remaining.`);
+      e.target.value = "";
+      return;
     }
-    if (!imageFiles.length) {
+    const imageFiles = files.filter((file) => allowedTypes.includes(file.type));
+    if (imageFiles.length !== files.length) {
+      setUploadError("Use JPEG, PNG, WebP, or AVIF images only.");
+      e.target.value = "";
+      return;
+    }
+    if (imageFiles.some((file) => file.size > maxFileSize)) {
+      setUploadError("Each image must be 5 MB or smaller.");
+      e.target.value = "";
+      return;
+    }
+    if (imageFiles.reduce((total, file) => total + file.size, 0) > maxRequestSize) {
+      setUploadError("The combined upload must be 20 MB or smaller.");
       e.target.value = "";
       return;
     }
@@ -171,20 +188,21 @@ export default function ListingFormModal({ initialListing, onClose, onSave }) {
 
           <div className="block">
             <span className="mb-1 block text-sm font-medium text-ink-700">
-              Listing images <span className="font-normal text-ink-500">(images only, up to 10)</span>
+              Listing images <span className="font-normal text-ink-500">(JPEG, PNG, WebP, or AVIF; still images only; 5 MB each; 20 MB per upload; up to 10 total)</span>
             </span>
             <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#CBD5E1] bg-slate-50 px-4 py-4 text-sm font-semibold text-[#0F172A] hover:bg-slate-100">
               <ImagePlus className="h-5 w-5" aria-hidden="true" />
               {isUploading ? "Uploading images..." : "Choose image files"}
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 multiple
                 onChange={handleImageUpload}
-                disabled={isUploading || !user}
+                disabled={isUploading || !user || form.images.length >= 10}
                 className="sr-only"
               />
             </label>
+            <p className="mt-1.5 text-xs text-ink-500">Images are resized to at most 2,560 pixels per side. Maximum input size is 10,000 pixels per side and 25 megapixels.</p>
             {uploadError && <p className="mt-2 text-xs text-danger">{uploadError}</p>}
             {form.images.length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">

@@ -4,28 +4,67 @@ const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
 const multer = require("multer");
+const { Transform, pipeline } = require("stream");
 const authMiddleware = require("../middleware/Authentication");
 const { configureCloudinary } = require("../utils/cloudinary");
+const {
+    ImageProcessingError,
+    ImageValidationError,
+    optimizeImage,
+    supportedImageTypes,
+} = require("../utils/imageProcessing");
 
 const router = express.Router();
 const temporaryUploadDirectory = path.join(os.tmpdir(), "staye-cloudinary-uploads");
 fs.mkdirSync(temporaryUploadDirectory, { recursive: true });
-const imageExtensions = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/gif": "gif",
-};
+const maxRequestSize = 20 * 1024 * 1024;
+const storage = {
+    _handleFile(req, file, callback) {
+        const filename = `${crypto.randomUUID()}.upload`;
+        const filePath = path.join(temporaryUploadDirectory, filename);
+        let fileSize = 0;
+        const enforceRequestSize = new Transform({
+            transform(chunk, _encoding, done) {
+                if ((req.uploadImageBytes || 0) + chunk.length > maxRequestSize) {
+                    const error = new multer.MulterError("LIMIT_FILE_SIZE", file.fieldname);
+                    error.message = "The combined image upload must be 20 MB or less.";
+                    done(error);
+                    return;
+                }
+                req.uploadImageBytes = (req.uploadImageBytes || 0) + chunk.length;
+                fileSize += chunk.length;
+                done(null, chunk);
+            },
+        });
 
+        pipeline(file.stream, enforceRequestSize, fs.createWriteStream(filePath, { flags: "wx" }), (error) => {
+            if (error) {
+                fs.promises.unlink(filePath).catch((cleanupError) => {
+                    if (cleanupError.code !== "ENOENT") {
+                        console.error("Could not remove a partial image upload:", cleanupError.message);
+                    }
+                });
+                callback(error);
+                return;
+            }
+            callback(null, {
+                destination: temporaryUploadDirectory,
+                filename,
+                path: filePath,
+                size: fileSize,
+            });
+        });
+    },
+    _removeFile(_req, file, callback) {
+        fs.unlink(file.path, callback);
+    },
+};
 const upload = multer({
-    storage: multer.diskStorage({
-        destination: (_req, _file, callback) => callback(null, temporaryUploadDirectory),
-        filename: (_req, file, callback) => callback(null, `${crypto.randomUUID()}.${imageExtensions[file.mimetype]}`),
-    }),
-    limits: { fileSize: 5 * 1024 * 1024, files: 10 },
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024, files: 10, fields: 1, fieldSize: 100, parts: 11 },
     fileFilter: (_req, file, callback) => {
-        if (!imageExtensions[file.mimetype]) {
-            return callback(new Error("Only JPEG, PNG, WebP, and GIF images are allowed."));
+        if (!supportedImageTypes[file.mimetype]) {
+            return callback(new Error("Only JPEG, PNG, WebP, and AVIF images are allowed."));
         }
         callback(null, true);
     },
@@ -43,30 +82,6 @@ function parseImageFiles(req, res, next) {
     });
 }
 
-async function hasValidImageSignature(file) {
-    const handle = await fs.promises.open(file.path, "r");
-    try {
-        const header = Buffer.alloc(12);
-        const { bytesRead } = await handle.read(header, 0, header.length, 0);
-        if (bytesRead < 4) return false;
-        const bytes = header.subarray(0, bytesRead);
-        switch (file.mimetype) {
-            case "image/jpeg":
-                return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-            case "image/png":
-                return bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-            case "image/webp":
-                return bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
-            case "image/gif":
-                return ["GIF87a", "GIF89a"].includes(bytes.toString("ascii", 0, 6));
-            default:
-                return false;
-        }
-    } finally {
-        await handle.close();
-    }
-}
-
 async function removeTemporaryFiles(files) {
     const results = await Promise.allSettled(files.map((file) => fs.promises.unlink(file.path)));
     for (const result of results) {
@@ -78,6 +93,7 @@ async function removeTemporaryFiles(files) {
 
 router.post("/images", authMiddleware, parseImageFiles, async (req, res) => {
     const files = req.files || [];
+    const optimizedFiles = [];
     const uploadedAssets = [];
     let cloudinary;
     try {
@@ -94,25 +110,27 @@ router.post("/images", authMiddleware, parseImageFiles, async (req, res) => {
         }
 
         const totalSize = files.reduce((total, file) => total + file.size, 0);
-        if (totalSize > 20 * 1024 * 1024) {
+        if (totalSize > maxRequestSize) {
             return res.status(413).json({ message: "The combined image upload must be 20 MB or less." });
         }
 
         for (const file of files) {
-            if (!(await hasValidImageSignature(file))) {
-                return res.status(400).json({ message: `${file.originalname} is not a valid ${file.mimetype} image.` });
-            }
+            const optimizedFile = {
+                path: path.join(temporaryUploadDirectory, `${crypto.randomUUID()}.webp`),
+            };
+            optimizedFiles.push(optimizedFile);
+            await optimizeImage(file.path, optimizedFile.path, file.mimetype);
         }
 
         cloudinary = configureCloudinary();
         const folder = kind === "profile" ? "staye/profiles" : "staye/listings";
-        for (const file of files) {
+        for (const file of optimizedFiles) {
             const asset = await cloudinary.uploader.upload(file.path, {
                 folder,
                 resource_type: "image",
                 unique_filename: true,
                 overwrite: false,
-                allowed_formats: ["jpg", "jpeg", "png", "webp", "gif"],
+                allowed_formats: ["webp"],
             });
             uploadedAssets.push({ url: asset.secure_url, publicId: asset.public_id });
         }
@@ -132,10 +150,16 @@ router.post("/images", authMiddleware, parseImageFiles, async (req, res) => {
         if (error.statusCode === 503) {
             return res.status(503).json({ message: error.message });
         }
+        if (error instanceof ImageValidationError) {
+            return res.status(error.statusCode).json({ message: error.message });
+        }
+        if (error instanceof ImageProcessingError) {
+            return res.status(error.statusCode).json({ message: error.message });
+        }
         console.error("Cloudinary image upload failed:", error.message);
         return res.status(502).json({ message: "Image storage is temporarily unavailable. Please try again." });
     } finally {
-        await removeTemporaryFiles(files);
+        await removeTemporaryFiles([...files, ...optimizedFiles]);
     }
 });
 

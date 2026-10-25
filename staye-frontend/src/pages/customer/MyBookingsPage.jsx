@@ -188,7 +188,7 @@ export default function MyBookingsPage() {
             {visibleBookings.length === 0 ? <EmptyState title="No bookings match this filter" /> : <div className="space-y-4">
             {visibleBookings.map((booking) => {
               const listing = typeof booking.listingId === "object" ? booking.listingId : null;
-              const listingImage = listing?.images?.[0] ? getImageUrl(listing.images[0]) : FALLBACK_IMAGE;
+              const listingImage = listing?.images?.[0] ? getImageUrl(listing.images[0], 480) : FALLBACK_IMAGE;
               return (
                 <article key={booking._id} className="overflow-hidden rounded-2xl border border-ink-300 bg-white shadow-card sm:flex sm:gap-5 sm:p-4">
                   <div className="aspect-[16/9] overflow-hidden bg-accent sm:aspect-[4/3] sm:w-56 sm:shrink-0 sm:rounded-xl">

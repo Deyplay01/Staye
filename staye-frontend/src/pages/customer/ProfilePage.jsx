@@ -77,8 +77,13 @@ export default function ProfilePage() {
   async function handleAvatarUpload(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Avatar must be an image file.");
+    if (!["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
+      setError("Use a JPEG, PNG, WebP, or AVIF image for your avatar.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Your avatar image must be 5 MB or smaller.");
       event.target.value = "";
       return;
     }
@@ -138,7 +143,7 @@ export default function ProfilePage() {
             <aside className="h-fit rounded-2xl border border-ink-300 bg-white p-6 text-center shadow-card">
               {profile.avatar && !avatarFailed ? (
                 <img
-                  src={getImageUrl(profile.avatar)}
+                  src={getImageUrl(profile.avatar, 256)}
                   alt="Profile avatar"
                   onError={() => setAvatarFailed(true)}
                   className="mx-auto h-24 w-24 rounded-full object-cover"
@@ -255,12 +260,13 @@ export default function ProfilePage() {
                   {isUploadingAvatar ? "Uploading photo..." : "Choose an image"}
                   <input
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    accept="image/jpeg,image/png,image/webp,image/avif"
                     onChange={handleAvatarUpload}
                     disabled={isUploadingAvatar}
                     className="sr-only"
                   />
                 </label>
+                <p className="mt-1.5 text-xs text-ink-500">JPEG, PNG, WebP, or AVIF; 5 MB maximum. Animated images are not supported.</p>
               </div>
               <div className="mt-6 flex justify-end border-t border-ink-300 pt-5">
                 <Button type="submit" disabled={isSaving}>

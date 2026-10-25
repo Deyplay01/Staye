@@ -101,7 +101,7 @@ export default function BookingReviewDialog({
       <div className="space-y-5 p-4 sm:p-6">
         <div className="flex items-center gap-3">
           <img
-            src={getImageUrl(listing?.images?.[0]) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
+            src={getImageUrl(listing?.images?.[0], 320) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80"}
             alt=""
             className="h-16 w-20 shrink-0 rounded-lg object-cover"
           />

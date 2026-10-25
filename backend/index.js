@@ -12,12 +12,13 @@ const listingsRoutes = require("./src/routes/listings");
 const bookingRoutes = require("./src/routes/booking");
 const paymentRoutes = require("./src/routes/payments");
 const uploadRoutes = require("./src/routes/uploads");
+const seoRoutes = require("./src/routes/seo");
 const notificationsRoutes = require("./src/routes/notifications");
 const cors = require("cors");
 const uploadDirectory = require("./src/utils/uploadDirectory");
 
 if (process.env.NODE_ENV !== 'production') {
-  const dns = require('dns');
+  const dns = require('node:dns');
   dns.setServers(['8.8.8.8', '8.8.4.4']);
 }
 
@@ -102,6 +103,7 @@ app.get("/health/ready", (_req, res) => {
 app.post("/api/payments/webhook", express.raw({ type: "application/json" }), paymentRoutes.handleWebhook);
 app.use(express.json());
 app.use("/uploads", express.static(uploadDirectory));
+app.use("/seo", seoRoutes);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use([
     "/api/admin/register",
@@ -117,7 +119,7 @@ app.use("/api/payments", paymentLimiter, paymentRoutes);
 app.use("/api/uploads", uploadLimiter, uploadRoutes);
 app.use("/api/notifications", notificationsRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || (process.env.NODE_ENV === "production" ? 10000 : 5000);
 const MONGODB_URI = process.env.MONGODB_URI;
 
 app.get("/", (req, res) => {
@@ -130,7 +132,7 @@ if (!MONGODB_URI || !process.env.JWT_SECRET) {
 }
 
 mongoose.connect(MONGODB_URI).then(async () => {
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
         console.log("Server running on port:", PORT);
     })
 }).catch((error) => {

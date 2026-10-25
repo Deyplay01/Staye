@@ -33,7 +33,7 @@ export default function ListingCard({ listing, checkIn, checkOut }) {
       <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
         <Link to={detailsPath} aria-label={`View ${listing.title}`} className="block h-full w-full">
           <img
-            src={getImageUrl(images[imageIndex]) || FALLBACK_IMAGE}
+            src={getImageUrl(images[imageIndex], 640) || FALLBACK_IMAGE}
             alt={`${listing.title} — photo ${imageIndex + 1}`}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             loading="lazy"
